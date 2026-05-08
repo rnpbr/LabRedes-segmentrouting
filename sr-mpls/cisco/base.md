@@ -1,4 +1,4 @@
-# SR-MPLS sobre Cisco IOS-XR — Fundação
+# SR-MPLS sobre Cisco IOS-XR — Referência Base
 
 > Documento de referência. Define os conceitos centrais de Segment Routing MPLS no plano de dados Cisco IOS-XR, as convenções adotadas neste projeto e a configuração mínima de sinalização. Materiais sucessivos tomam este texto como pré-requisito.
 
