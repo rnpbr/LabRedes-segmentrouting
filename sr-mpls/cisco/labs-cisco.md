@@ -1,15 +1,19 @@
 > Uso interno — material em desenvolvimento.
 
-# SR-MPLS | Cisco IOS-XR
+# SR-MPLS | Pre requisitos para os labs Cisco IOS-XR
 
 Padronização do ambiente necessário para executar os labs de SR-MPLS sobre Cisco IOS-XR com Containerlab. 
-## Ambiente
 
-| Componente | Detalhe |
+### Ambiente
+Os laboratórios utilizam o Containerlab como orquestrador de topologias de rede. O Containerlab lê um arquivo YAML com a definição dos nodes e links, cria os containers Docker correspondentes e interliga as interfaces virtuais entre eles. 
+ 
+A imagem utilizada é o Cisco XRd Control Plane, uma versão containerizada do IOS-XR desenvolvida pela Cisco para ambientes de laboratório e testes. Por ser um container nativo, o XRd inicializa em segundos e consome em torno de 1 GB de RAM por node, o que permite rodar topologias com vários nós em uma única máquina com recursos modestos.
+
+| Recurso | XRd Control Plane |
 |---|---|
-| Orquestrador | Containerlab 0.75.0 |
-| Nodes | Cisco IOS-XR (XRd Control Plane) |
-| Imagem | `sbezverk/xrd-control-plane:7.10.2` |
+| RAM por node | ~1 GB |
+| Boot | ~30 segundos |
+| KVM | Não é necessário |
 
 
 ---
@@ -18,16 +22,30 @@ Padronização do ambiente necessário para executar os labs de SR-MPLS sobre Ci
 
 ### Docker
 
+É necessário consultar o processo de instalação de acordo com o SO Linux que está sendo utilizado:
+
 https://docs.docker.com/engine/install/
 
 ### Containerlab
+
+Instalação do containerlab
 
 ```bash
 curl -sL https://containerlab.dev/setup | sudo -E bash -s "all"
 ```
 
-### Imagem XRd (Uso exclusivamente interno)
+### Ajustes e imagem
+Para executar os containers XRd, é necessário ajustar os parâmetros do inotify no Linux. Por padrão, esses limites são configurados de forma restritiva para evitar consumo excessivo de memória pelo monitoramento de arquivos do sistema.
 
+```bash
+# max_user_instances: Limite de programas (ou processos) que podem observar os arquivos.
+sudo sysctl -w fs.inotify.max_user_instances=64000
+
+# max_user_watches: Limite de arquivos e pastas totais sendo observados.
+sudo sysctl -w fs.inotify.max_user_watches=64000
+```
+
+Download da imagem (uso exclusivamente interno)
 ```bash
 # Baixar uma unica vez — fica disponivel para todos os labs
 docker pull sbezverk/xrd-control-plane:7.10.2
@@ -35,67 +53,9 @@ docker pull sbezverk/xrd-control-plane:7.10.2
 
 ---
 
-## Pre-requisito obrigatorio antes de qualquer deploy
-
-```bash
-sudo sysctl -w fs.inotify.max_user_instances=64000
-sudo sysctl -w fs.inotify.max_user_watches=64000
-```
-
-Para persistir apos reboot:
-
-```bash
-echo "fs.inotify.max_user_instances=64000" | sudo tee -a /etc/sysctl.conf
-echo "fs.inotify.max_user_watches=64000"   | sudo tee -a /etc/sysctl.conf
-```
-
----
-
-## Deploy e acesso
-
-```bash
-# Subir o lab
-containerlab deploy -t lab.clab.yml
-
-# Derrubar o lab
-containerlab destroy -t lab.clab.yml
-
-# Recriar do zero (use apenas se mudar topologia)
-containerlab deploy -t lab.clab.yml --reconfigure
-```
-
-### Acesso aos nos
-
-```bash
-# Via SSH (quando disponivel)
-ssh clab@ip
-# Senha: clab@123
-
-```
-
----
-
-## Recursos por node
-
-| Recurso | XRd Control Plane |
-|---|---|
-| RAM por no | ~1 GB |
-| Boot | ~30 segundos |
-| KVM obrigatorio | Nao |
-
-### Dimensionamento de RAM
-
-| Nodes | RAM |
-|---|---|
-| 4 | 8 GB |
-| 8 | 12 GB |
-| 11 | 16 GB |
-| 20 | 32 GB |
-
----
-
 ## Referencias
 
-- CCIE SPv5.1 Labs (SR): https://ccie-sp.gitbook.io/ccie-spv5.1-labs/labs/sr
+- Docker: https://docs.docker.com/engine/install/
 - Containerlab XRd: https://containerlab.dev/manual/kinds/xrd/
-- Cisco IOS-XR SR Configuration Guide: https://www.cisco.com/c/en/us/td/docs/iosxr/cisco8000/segment-routing/710x/configuration/guide/b-segment-routing-cg-cisco8000-710x.html
+- Containerlab XRd Kind: https://containerlab.dev/manual/kinds/xrd/#__tabbed_1_1
+- Cisco XRd Docs: https://xrdocs.io/virtual-routing/tutorials/2022-08-22-setting-up-host-environment-to-run-xrd#making-suggested-corrections-to-the-host-machine
