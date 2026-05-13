@@ -43,11 +43,11 @@ O OSPF elege ECMP (Equal-Cost Multi-Path) entre R2 e R3 para alcançar R4. A SR 
 ---
 ## Deploy
 
-##### Pre-requisitos
+## Pre-requisitos
 Siga os passos do arquivo `labs-cisco.md` para baixar os recursos necessários para prosseguir com o laboratório.
 
 
-##### 1. Criar a pasta do lab
+## 1. Criar a pasta do lab
  
 ```bash
 mkdir -p ~/labs/sr-mpls/cisco/lab01_sr-te
@@ -55,7 +55,7 @@ cd ~/labs/sr-mpls/cisco/lab01_sr-te
 ```
  
 
-##### 2. Criar o arquivo de topologia
+#### 2. Criar o arquivo de topologia
  
 ```bash
 nano lab01_sr-te.clab.yml 
@@ -94,14 +94,14 @@ topology:
     - endpoints: ["R3:Gi0-0-0-1", "R4:Gi0-0-0-1"]
 ```
  
-##### 3. Subir o lab
+## 3. Subir o lab
  
 ```bash
 containerlab deploy -t lab01_sr-te.clab.yml
 ```
 
 
-##### 4. Acesso e configuração dos nodes criados:
+## 4. Acesso e configuração dos nodes criados:
 Credenciais de acesso: 
 usuario: `clab` 
 senha: `clab@123`
@@ -300,7 +300,7 @@ senha: `clab@123`
 
     ```
 
-##### 5. Testando as configurações de Segment Routing Traffic Engineering 
+## 5. Testando as configurações de Segment Routing Traffic Engineering 
 
 No R1:
 
@@ -352,13 +352,12 @@ traceroute mpls sr-policy name srte_c_100_ep_1.1.1.4 verbose
 >Esperado: caminho passa apenas por R3, nunca por R2.
 
 
-##### 6. Como derrubar o lab
+## 6. Como derrubar o lab
  
 ```bash
 cd ~/labs/sr-mpls/cisco/lab01_sr-te
 containerlab destroy -t lab01_sr-te.clab.yml
 ```
-
 
 ## Referências
 - Containerlab XRd Kind: https://containerlab.dev/manual/kinds/xrd/#__tabbed_1_1
