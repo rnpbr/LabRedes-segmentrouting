@@ -1,6 +1,6 @@
 > Uso interno - material em desenvolvimento.
 
-# Lab 01 | SR-TE
+# Traffic Engineering Basic
 
 > Pré-requisito: leia o `base.md` antes de continuar. Este lab pressupõe familiaridade com os conceitos de Segment Routing, SRGB, Prefix-SID e OSPF com extensões SR definidos lá.
 
@@ -400,6 +400,7 @@ containerlab destroy -t lab01_sr-te.clab.yml
 
 ---
 ## Conclusão
+
 Este lab demonstra na prática a diferença entre o encaminhamento IGP e o encaminhamento
 SR-TE. O OSPF faz o que foi projetado para fazer: distribui o tráfego pelos caminhos de
 menor custo, usando ECMP quando os custos são iguais. O SR-TE não disputa com o IGP -
