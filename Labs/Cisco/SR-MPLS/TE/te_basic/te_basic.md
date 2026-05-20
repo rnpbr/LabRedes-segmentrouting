@@ -2,7 +2,7 @@
 
 # Traffic Engineering Basic
 
-> Pré-requisito: leia o `base.md` antes de continuar. Este lab pressupõe familiaridade com os conceitos de Segment Routing, SRGB, Prefix-SID e OSPF com extensões SR definidos lá.
+> Pré-requisito: leia o `base.md` antes de continuar. Este lab pressupõe familiaridade com os conceitos de Segment Routing, SRGB, Prefix-SID e OSPF com extensões SR definidos
 
 ---
 
@@ -43,23 +43,23 @@ O caminho via R2 continua existindo no IGP. A SR Policy simplesmente não o usa.
 ### 1. Criar a pasta do lab
 
 ```bash
-mkdir -p ~/labs/sr-mpls/cisco/lab01_sr-te
-cd ~/labs/sr-mpls/cisco/lab01_sr-te
+mkdir -p ~/labs/sr-mpls/cisco/basic_sr-te
+cd ~/labs/sr-mpls/cisco/basic_sr-te
 ```
 
 ### 2. Criar o arquivo de topologia
 
 ```bash
-nano lab01_sr-te.clab.yml
+nano basic_sr-te.clab.yml
 ```
 
 Cole o conteúdo abaixo e salve:
 
 ```yaml
-name: lab01-sr-te
+name: basic_sr-te
 
 mgmt:
-  network: mgmt-lab01-sr-te
+  network: mgmt-sr-te
   ipv4-subnet: 172.20.20.0/24
 
 topology:
@@ -273,7 +273,7 @@ router ospf 1
 commit
 end
 ```
-
+s
 ---
 
 ### R4 - Tailend
@@ -394,8 +394,8 @@ traceroute mpls sr-policy name srte_c_100_ep_1.1.1.4 verbose
 ## Derrubar o lab
 
 ```bash
-cd ~/labs/sr-mpls/cisco/lab01_sr-te
-containerlab destroy -t lab01_sr-te.clab.yml
+cd ~/labs/sr-mpls/cisco/basic_sr-te
+containerlab destroy -t basic_sr-te.clab.yml
 ```
 
 ---
