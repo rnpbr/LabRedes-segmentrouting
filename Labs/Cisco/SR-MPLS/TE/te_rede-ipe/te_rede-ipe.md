@@ -34,7 +34,7 @@ Os dois caminhos coexistem. O IGP não é alterado. Apenas o headend é configur
 
 ## Topologia
 
-![Topologia SR-TE Rede Ipê](./ce_to_rj_rede-ipe.png)
+![Topologia SR-TE Rede Ipê](./images/1_topology_ce_to_rj_rede-ipe.png)
 
 Figura 1: Topologia SR-TE entre CE e RJ na Rede Ipê. O caminho em destaque (CE → BA → MG → RJ) é o caminho de menor latência forçado pela SR Policy. O caminho padrão (CE → SP → RJ) continua ativo para tráfego best-effort.
 
@@ -134,7 +134,7 @@ containerlab deploy -t sr-te-rede-ipe.clab.yml
 
 Resultado esperado:
 
-![Deploy Rede Ipê](deploy-rede-ipe.png)
+![Deploy Lab Rede Ipê](./images/2_sr-te_lab_running.png)
 
 ---
 
@@ -456,19 +456,10 @@ Execute os comandos abaixo em **PoP-CE**, na ordem.
 show ospf neighbor
 ```
 
-![alt text](ospf-ce-statefull.png)
+![OSPF UP](./images/3_sr-te-osfp_up.png)
 
 > Esperado: PoP-SP e PoP-BA em estado `FULL`.
 
-
-**LFIB populada**
-
-```
-show mpls forwarding
-```
-![alt text](image.png)
-
-> Esperado: entradas para todos os labels com next-hop e interface corretos. Observe que `16400` (PoP-RJ) aponta para **PoP-SP** - esse é o caminho IGP padrão, antes da SR Policy agir.
 
 
 ---
@@ -480,35 +471,27 @@ show mpls forwarding
 ```
 show segment-routing traffic-eng policy color 100
 ```
-![alt text](image-1.png)
+![SR TE - Policy Ativa](./images/5_sr-te-policy.png)
 > Esperado: `Admin: up, Oper: up` com Segment List `[16300, 16350, 16400]` ativo.
 
 
-
-**Binding-SID na LFIB**
-
-```
-show mpls forwarding labels 15100
-```
-![alt text](image-2.png)
-
-> Esperado: label `15100` mapeado para o Segment List da policy.
-
-
-**TE forçado - MPLS forwarding**
+**SR-TE ativo**
 
 ```
 show mpls forwarding
 ```
-![alt text](image-5.png)
-> Observe a entrada do label `16400` (PoP-RJ): o next-hop aponta para `srte_c_100_e` (a SR Policy), não para PoP-SP como o IGP escolheria. A linha `SR TE: 1 [TE-INT]` com bytes switched na interface `Gi0/0/0/1` evidencia tráfego real percorrendo o caminho forçado.
+![MPLS Fowarding](./images/4_sr-te_mpls_fwd.png)
 
-**Caminho SR-TE confirmado**
+> Esperado: entradas para todos os labels com next-hop e interface corretos. Observe que `16400` (PoP-RJ) aponta para **PoP-SP** - esse é o caminho IGP padrão, antes da SR Policy agir.
+
+Observe a entrada do label `16400` (PoP-RJ): o next-hop aponta para `srte_c_100_e` (a SR Policy), não para PoP-SP como o IGP escolheria. A linha `SR TE: 1 [TE-INT]` com bytes switched na interface `Gi0/0/0/1` evidencia tráfego real percorrendo o caminho forçado.
+
+**Caminho SR-TE**
 
 ```
 traceroute 10.0.0.5 source 10.0.0.1
 ```
-![alt text](image-4.png)
+![Traceroute](./images/6_sr-te-traceroute.png)
 
 
 
