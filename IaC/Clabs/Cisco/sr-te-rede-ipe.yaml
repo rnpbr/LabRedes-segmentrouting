@@ -1,0 +1,34 @@
+name: sr-te-rede-ipe
+
+mgmt:
+  network: mgmt-rede-ipe
+  ipv4-subnet: 172.20.20.0/24
+
+topology:
+  kinds:
+    cisco_xrd:
+      image: sbezverk/xrd-control-plane:7.10.2
+
+  nodes:
+    pop-ce:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.20.11
+    pop-sp:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.20.12
+    pop-ba:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.20.13
+    pop-mg:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.20.14
+    pop-rj:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.20.15
+
+  links:
+    - endpoints: ["pop-ce:Gi0-0-0-0", "pop-sp:Gi0-0-0-0"]
+    - endpoints: ["pop-ce:Gi0-0-0-1", "pop-ba:Gi0-0-0-0"]
+    - endpoints: ["pop-sp:Gi0-0-0-1", "pop-rj:Gi0-0-0-0"]
+    - endpoints: ["pop-ba:Gi0-0-0-1", "pop-mg:Gi0-0-0-0"]
+    - endpoints: ["pop-mg:Gi0-0-0-1", "pop-rj:Gi0-0-0-1"]

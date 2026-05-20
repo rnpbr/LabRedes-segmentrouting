@@ -514,7 +514,7 @@ traceroute 10.0.0.5 source 10.0.0.1
 
 > Esperado: caminho passa por **PoP-BA** e **PoP-MG**, nunca por PoP-SP. A rota estática aponta `10.0.0.5/32` diretamente para a SR Policy, portanto o traceroute comum já reflete o caminho forçado pelo TE - não o IGP.
 
-**Nota:** O comando `traceroute sr-mpls policy name` requer MPLS OAM, indisponível na imagem `sbezverk/xrd-control-plane:7.10.2`. Os comandos acima são equivalentes para fins de validação.
+**Nota:** O comando `traceroute sr-mpls policy name` requer MPLS OAM, indisponível na imagem usado neste lab. Os comandos acima são equivalentes para fins de validação.
 
 ---
 
@@ -548,4 +548,3 @@ Esse modelo se aplica diretamente a outros corredores da Rede Ipê onde latênci
 
 ---
 
-> **Aviso:** A imagem `sbezverk/xrd-control-plane:7.10.2` utilizada neste lab não é oficial da Cisco. Trata-se de uma imagem de terceiro disponibilizada publicamente no Docker Hub para fins educacionais. Sua disponibilidade não é garantida e pode ser removida a qualquer momento. Esta imagem não deve ser utilizada fora de ambientes de teste isolados.
