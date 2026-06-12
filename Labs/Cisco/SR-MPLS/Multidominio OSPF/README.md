@@ -5,7 +5,7 @@ Este lab demonstra costura interdomínio SR-MPLS com OSPF Flexible Algorithm 128
 A topologia tem 10 roteadores:
 
 ```text
-Domínio A                       Domínio B                       Domínio C
+Domínio A              Domínio B         Domínio C
 
  PE1 --- P1 --- DBR-AB1 ======== DBR-BC1 --- P3 --- PE9
   |      |        ||       \     /   ||       |      |
