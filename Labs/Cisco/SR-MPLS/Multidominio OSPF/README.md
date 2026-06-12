@@ -366,16 +366,6 @@ scripts/xr dbr-ab1 \
 
 Esperado após reconvergência: DBR-AB1 volta a ter três neighbors OSPF 200, `show mpls forwarding labels 17230 detail` aponta para DBR-BC1 e o traceroute SR-MPLS volta a funcionar.
 
-## Perguntas e exercícios
-
-- Por que a SR Policy de PE1 pode ficar operacionalmente up antes de qualquer rota de serviço ser direcionada para ela?
-- O que muda na RIB e no CEF de PE1 quando a rota estática `sr-policy` para `10.3.255.9/32` é adicionada?
-- Qual nó remove o label `17120`, qual remove `17230` e qual remove `17309`?
-- O que acontece se o domínio B definir o Flex-Algo 128 de forma diferente, por exemplo sem excluir a affinity `red`?
-- Qual sinal operacional deveria controlar o anúncio do SID anycast AB para evitar black-hole na falha perigosa de DBR-AB1?
-- Como o desenho mudaria se um controller computasse o stack interdomínio com entrada BGP-LS, em vez de um humano digitar labels estáticos?
-- Como BGP-LU ou seamless MPLS resolveriam o alcance de forma diferente deste stack SR-TE estático?
-
 ## Limpeza
 
 ```bash
