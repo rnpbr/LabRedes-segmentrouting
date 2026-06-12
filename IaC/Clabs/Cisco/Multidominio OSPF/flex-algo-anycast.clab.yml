@@ -1,0 +1,45 @@
+name: flex-algo-anycast
+
+topology:
+  defaults:
+    kind: cisco_xrd
+    image: xrd-control-plane:7.10.2
+  nodes:
+    pe1:
+      startup-config: configs/pe1.cfg
+    p1:
+      startup-config: configs/p1.cfg
+    p2:
+      startup-config: configs/p2.cfg
+    dbr-ab1:
+      startup-config: configs/dbr-ab1.cfg
+    dbr-ab2:
+      startup-config: configs/dbr-ab2.cfg
+    dbr-bc1:
+      startup-config: configs/dbr-bc1.cfg
+    dbr-bc2:
+      startup-config: configs/dbr-bc2.cfg
+    p3:
+      startup-config: configs/p3.cfg
+    p4:
+      startup-config: configs/p4.cfg
+    pe9:
+      startup-config: configs/pe9.cfg
+  links:
+    - endpoints: ["pe1:Gi0-0-0-0", "p1:Gi0-0-0-0"]
+    - endpoints: ["pe1:Gi0-0-0-1", "p2:Gi0-0-0-0"]
+    - endpoints: ["p1:Gi0-0-0-1", "p2:Gi0-0-0-1"]
+    - endpoints: ["p1:Gi0-0-0-2", "dbr-ab1:Gi0-0-0-0"]
+    - endpoints: ["p2:Gi0-0-0-2", "dbr-ab2:Gi0-0-0-0"]
+    - endpoints: ["dbr-ab1:Gi0-0-0-1", "dbr-bc1:Gi0-0-0-0"]
+    - endpoints: ["dbr-ab1:Gi0-0-0-2", "dbr-bc2:Gi0-0-0-0"]
+    - endpoints: ["dbr-ab2:Gi0-0-0-1", "dbr-bc1:Gi0-0-0-1"]
+    - endpoints: ["dbr-ab2:Gi0-0-0-2", "dbr-bc2:Gi0-0-0-1"]
+    - endpoints: ["dbr-ab1:Gi0-0-0-3", "dbr-ab2:Gi0-0-0-3"]
+    - endpoints: ["dbr-bc1:Gi0-0-0-2", "dbr-bc2:Gi0-0-0-2"]
+    - endpoints: ["dbr-bc1:Gi0-0-0-3", "p3:Gi0-0-0-0"]
+    - endpoints: ["dbr-bc2:Gi0-0-0-3", "p4:Gi0-0-0-0"]
+    - endpoints: ["dbr-bc1:Gi0-0-0-4", "dbr-bc2:Gi0-0-0-4"]
+    - endpoints: ["p3:Gi0-0-0-1", "p4:Gi0-0-0-1"]
+    - endpoints: ["p3:Gi0-0-0-2", "pe9:Gi0-0-0-0"]
+    - endpoints: ["p4:Gi0-0-0-2", "pe9:Gi0-0-0-1"]
