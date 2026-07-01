@@ -5,20 +5,27 @@ mgmt:
   ipv4-subnet: 172.20.21.0/24
 
 topology:
-  defaults:
-    kind: cisco_xrd
-    image: sbezverk/xrd-control-plane:7.10.2
+  kinds:
+    cisco_xrd:
+      image: ios-xr/xrd-control-plane:7.10.2
 
   nodes:
     sp:
+      kind: cisco_xrd
       mgmt-ipv4: 172.20.21.11
-      
+      startup-config: configs/sp.cfg
     df:
+      kind: cisco_xrd
       mgmt-ipv4: 172.20.21.12
+      startup-config: configs/df.cfg
     mg:
+      kind: cisco_xrd
       mgmt-ipv4: 172.20.21.15
+      startup-config: configs/mg.cfg
     ba:
+      kind: cisco_xrd
       mgmt-ipv4: 172.20.21.17
+      startup-config: configs/ba.cfg
 
   links:
     - endpoints: ["sp:Gi0-0-0-0", "df:Gi0-0-0-0"]

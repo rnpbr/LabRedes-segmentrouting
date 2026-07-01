@@ -4,7 +4,7 @@
 
 Todos os labs anteriores tratam do intervalo entre a falha e a ativação do backup - o TI-LFA garante que esse intervalo seja coberto em menos de 50ms por um caminho pré-calculado e livre de loops. Este lab trata do que acontece **depois** desse intervalo: a reconvergência "de verdade" do IGP, quando cada roteador do domínio recalcula SPF e atualiza sua FIB para refletir a topologia definitiva.
 
-Esse processo não é instantâneo nem simultâneo entre roteadores - é aí que mora o **microloop**, um problema anterior e independente do Segment Routing, presente em qualquer rede IP com roteamento hop-by-hop. Ver [`sr_ti-lfa_concepts.md`](../sr_ti-lfa_concepts.md) para a explicação completa do mecanismo antes de seguir.
+Esse processo não é instantâneo nem simultâneo entre roteadores - é aí que mora o **microloop**, um problema anterior e independente do Segment Routing, presente em qualquer rede IP com roteamento hop-by-hop. Ver [`concepts.md`](../concepts.md) para a explicação completa do mecanismo antes de seguir.
 
 ---
 
@@ -50,7 +50,7 @@ router ospf 1
  microloop avoidance segment-routing
 ```
 
-Este lab habilita a flag em todos os seis nós (política uniforme), mas vale lembrar - como destacado em `sr_ti-lfa_concepts.md` - que o benefício é incremental por nó: mesmo habilitar apenas em SP já reduz a contribuição de SP para o problema, independentemente do que RJ, MG e BA estejam fazendo.
+Este lab habilita a flag em todos os seis nós (política uniforme), mas vale lembrar - como destacado em `concepts.md` - que o benefício é incremental por nó: mesmo habilitar apenas em SP já reduz a contribuição de SP para o problema, independentemente do que RJ, MG e BA estejam fazendo.
 
 TI-LFA continua habilitado normalmente em todas as interfaces (`fast-reroute per-prefix` + `ti-lfa enable`) - microloop avoidance é um complemento ao FRR, não um substituto: FRR cobre o primeiro instante da falha, microloop avoidance cobre a janela de reconvergência que vem logo depois.
 
@@ -89,10 +89,10 @@ Em vermelho, o link testado (PR-DF). Em verde, o arco longo - o caminho pós-con
 ## Deploy
 
 ```bash
-mkdir -p ~/labs/sr-mpls/cisco/tilfa-microloop-avoidance
-cd ~/labs/sr-mpls/cisco/tilfa-microloop-avoidance
-cp IaC/Clabs/Cisco/ti_lfa_rede-ipe/tilfa-microloop-avoidance.yml lab.clab.yml
-cp -r TI-LFA/microloop-avoidance/configs .
+mkdir -p ~/labs/sr-mpls/cisco/ti-lfa/microloop-avoidance
+cd ~/labs/sr-mpls/cisco/ti-lfa/microloop-avoidance
+cp IaC/Clabs/Cisco/ti-lfa/microloop-avoidance.yml lab.clab.yml
+cp -r Labs/Cisco/SR-MPLS/TI-LFA/microloop-avoidance/configs .
 sudo clab deploy -t lab.clab.yml
 ```
 

@@ -86,10 +86,10 @@ O mgmt subnet muda para `172.20.23.0/24` para permitir rodar este lab em paralel
 ## Deploy
 
 ```bash
-mkdir -p ~/labs/sr-mpls/cisco/tilfa-double-segment
-cd ~/labs/sr-mpls/cisco/tilfa-double-segment
-cp IaC/Clabs/Cisco/ti_lfa_rede-ipe/tilfa-double-segment.yml lab.clab.yml
-cp -r TI-LFA/double-segment/configs .
+mkdir -p ~/labs/sr-mpls/cisco/ti-lfa/double-segment
+cd ~/labs/sr-mpls/cisco/ti-lfa/double-segment
+cp IaC/Clabs/Cisco/ti-lfa/double-segment.yml lab.clab.yml
+cp -r Labs/Cisco/SR-MPLS/TI-LFA/double-segment/configs .
 sudo clab deploy -t lab.clab.yml
 ```
 
@@ -175,4 +175,4 @@ Em MG, note que o label de topo já não é mais o próprio Node-SID de MG (que 
 
 ## Quando isso acontece na prática
 
-Em produção, um custo de 1000 artificial não é o gatilho real - a situação double-segment aparece organicamente em topologias com poucos caminhos alternativos entre certas regiões da rede (redes em anel, topologias regionais com poucos backbones de trânsito, ou depois que um terceiro enlace já está indisponível e a rede está operando com menos redundância que o normal). O ponto pedagógico deste lab é isolar a condição - P-space e Q-space sem interseção, mas com um enlace physical entre os dois - para observar exatamente como o TI-LFA resolve o problema quando ele aparece.
+Em produção, um custo de 1000 artificial não é o gatilho real - a situação double-segment aparece organicamente em topologias com poucos caminhos alternativos entre certas regiões da rede (redes em anel, topologias regionais com poucos backbones de trânsito, ou depois que um terceiro enlace já está indisponível e a rede está operando com menos redundância que o normal). O ponto pedagógico deste lab é isolar a condição - P-space e Q-space sem interseção, mas com um enlace físico entre os dois - para observar exatamente como o TI-LFA resolve o problema quando ele aparece.

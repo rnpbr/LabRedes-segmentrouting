@@ -89,17 +89,18 @@ O label de cada node é calculado como base do SRGB + SID index. Com SRGB 16000-
 ## Deploy
 
 ```bash
-mkdir -p ~/labs/sr-mpls/cisco/tilfa-zerosegment-rede-ipe
-cd ~/labs/sr-mpls/cisco/tilfa-zerosegment-rede-ipe
+mkdir -p ~/labs/sr-mpls/cisco/ti-lfa/zero-segment
+cd ~/labs/sr-mpls/cisco/ti-lfa/zero-segment
 ```
 
-Copiar o arquivo de topologia do repositório:
+Copiar o arquivo de topologia e as configurações do repositório:
 
 ```bash
-cp IaC/Clabs/Cisco/ti_lfa_rede-ipe/tilfa-zero-segment.yml lab.clab.yml
+cp IaC/Clabs/Cisco/ti-lfa/zero-segment.yml lab.clab.yml
+cp -r Labs/Cisco/SR-MPLS/TI-LFA/zero-segment/configs .
 ```
 
-O arquivo `tilfa-zero-segment.yml` define os nós, imagem, endereços de gerência e mapeamento de interfaces. Os arquivos `.cfg` de cada node devem estar presentes no diretório `configs/` antes do deploy.
+O arquivo `zero-segment.yml` define os nós, imagem, endereços de gerência e mapeamento de interfaces, e referencia cada `.cfg` via `startup-config` - os nós já sobem configurados.
 
 ```bash
 sudo clab deploy -t lab.clab.yml
@@ -124,7 +125,7 @@ configs/
 └── ba.cfg
 ```
 
-Caso seja necessário aplicar a configuração manualmente:
+Aplicadas automaticamente no boot via `startup-config` no `.clab.yml`. Para revisar ou reaplicar manualmente:
 
 SP: `ssh clab@172.20.21.11` -> `configs/sp.cfg`
 DF: `ssh clab@172.20.21.12` -> `configs/df.cfg`

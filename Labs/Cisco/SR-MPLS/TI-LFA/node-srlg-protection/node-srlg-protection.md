@@ -4,7 +4,7 @@
 
 Os labs anteriores (Zero/Single/Double-Segment) tratam todos do mesmo tipo de falha: **queda de um link**. TI-LFA calcula, por padrão, um backup que só garante desviar daquele link específico - se o problema real for o **nó** do outro lado caindo por completo, ou se o próprio backup escolhido compartilhar risco físico com o link original (mesma rota de fibra, mesmo duto, mesmo cartão), a proteção de link sozinha não é suficiente.
 
-Este lab configura os dois níveis adicionais de proteção que o TI-LFA oferece a partir do IOS-XR 6.1.1: **node protection** (o backup contorna o nó inteiro, não só o link até ele) e **local SRLG protection** (o backup evita enlaces que compartilham grupo de risco com o enlace protegido). Ver [`sr_ti-lfa_concepts.md`](../sr_ti-lfa_concepts.md) para a explicação conceitual de tiebreakers e SRLG antes de seguir.
+Este lab configura os dois níveis adicionais de proteção que o TI-LFA oferece a partir do IOS-XR 6.1.1: **node protection** (o backup contorna o nó inteiro, não só o link até ele) e **local SRLG protection** (o backup evita enlaces que compartilham grupo de risco com o enlace protegido). Ver [`concepts.md`](../concepts.md) para a explicação conceitual de tiebreakers e SRLG antes de seguir.
 
 ---
 
@@ -100,10 +100,10 @@ Em vermelho, o enlace/nó sob teste (SP-MG). Em dourado tracejado, as duas alter
 ## Deploy
 
 ```bash
-mkdir -p ~/labs/sr-mpls/cisco/tilfa-node-srlg-protection
-cd ~/labs/sr-mpls/cisco/tilfa-node-srlg-protection
-cp IaC/Clabs/Cisco/ti_lfa_rede-ipe/tilfa-node-srlg-protection.yml lab.clab.yml
-cp -r TI-LFA/node-srlg-protection/configs .
+mkdir -p ~/labs/sr-mpls/cisco/ti-lfa/node-srlg-protection
+cd ~/labs/sr-mpls/cisco/ti-lfa/node-srlg-protection
+cp IaC/Clabs/Cisco/ti-lfa/node-srlg-protection.yml lab.clab.yml
+cp -r Labs/Cisco/SR-MPLS/TI-LFA/node-srlg-protection/configs .
 sudo clab deploy -t lab.clab.yml
 ```
 
@@ -194,7 +194,7 @@ Esperado: tráfego passa por RJ -> PR -> BA -> DF, contornando MG completamente 
 Derrube o nó MG no lugar de apenas uma interface (no clab, isso equivale a parar o container):
 
 ```bash
-sudo docker stop clab-tilfa-node-srlg-protection-mg
+sudo docker stop clab-ti-lfa/node-srlg-protection-mg
 ```
 
 Em SP:
@@ -208,7 +208,7 @@ Esperado: mesmo resultado da simulação anterior - RJ -> PR -> BA -> DF - confi
 Religue o nó depois:
 
 ```bash
-sudo docker start clab-tilfa-node-srlg-protection-mg
+sudo docker start clab-ti-lfa/node-srlg-protection-mg
 ```
 
 ---

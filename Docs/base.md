@@ -1,6 +1,8 @@
-# SR-MPLS sobre Cisco IOS-XR — Referência Base
+# SR-MPLS sobre Cisco IOS-XR - Referência Base
 
 > Documento de referência. Define os conceitos centrais de Segment Routing MPLS no plano de dados Cisco IOS-XR, as convenções adotadas neste projeto e a configuração mínima de sinalização. Materiais sucessivos tomam este texto como pré-requisito.
+
+Preparação de ambiente (Docker, Containerlab, imagem XRd) está em [`setup.md`](./setup.md), não aqui. Para saber o que existe no projeto e em que ordem seguir os labs, ver [`roadmap.md`](./roadmap.md).
 
 ## Escopo
 
@@ -14,13 +16,13 @@ Está em escopo:
 - Configuração de referência em IOS-XR.
 - Comandos de validação que confirmam que o domínio SR está saudável.
 
-A imagem de referência usada nos exemplos é `xrd-control-plane:7.10.2`. Comandos e saídas refletem essa versão.
+A imagem de referência usada nos exemplos é `ios-xr/xrd-control-plane:7.10.2` - o nome local que o `docker load` produz a partir do tarball baixado no CCO da Cisco (ver `setup.md`). Comandos e saídas refletem essa versão.
 
 ## Conceitos centrais
 
 **Segment Routing.** Modelo de encaminhamento source-routed: o nó de entrada (headend) impõe um stack de labels que descreve o caminho desejado. Os nós intermediários encaminham olhando apenas o label do topo. Não há estado por LSP nos nós intermediários. No SR-MPLS, o stack é um stack MPLS convencional; o que muda é a semântica e a forma como os labels são distribuídos.
 
-**SID (Segment Identifier).** Identifica um segmento — uma instrução de encaminhamento. Dois tipos importam aqui:
+**SID (Segment Identifier).** Identifica um segmento - uma instrução de encaminhamento. Dois tipos importam aqui:
 
 - **Prefix-SID**: identifica um destino IP (tipicamente uma loopback) globalmente no domínio. É anunciado pelo IGP. Quando o prefixo é uma loopback que representa um nó, o prefix-SID também é chamado de **node-SID**.
 - **Adjacency-SID**: identifica um link específico de saída. É local ao nó que o anuncia. Útil em segmentos explícitos que precisam atravessar uma adjacência específica.
@@ -33,9 +35,9 @@ A faixa default em IOS-XR vai de 16000 a 23999. Em domínios cooperantes ou que 
 
 **SRLB (Segment Routing Local Block).** Faixa de labels para SIDs *locais* (adjacency-SIDs configurados manualmente, binding-SIDs, etc.). Local significa que o label tem significado apenas no nó que o anuncia.
 
-**IGP carrega SR.** OSPFv2 estende sua sinalização com Opaque LSAs (RFC 8665) para anunciar SIDs e capacidades SR. IS-IS faz o equivalente com sub-TLVs (RFC 8667). Não há protocolo separado de distribuição de label — LDP some. É um dos principais ganhos operacionais do SR sobre MPLS clássico: menos protocolos, menos sincronização, menos casos de borda.
+**IGP carrega SR.** OSPFv2 estende sua sinalização com Opaque LSAs (RFC 8665) para anunciar SIDs e capacidades SR. IS-IS faz o equivalente com sub-TLVs (RFC 8667). Não há protocolo separado de distribuição de label - LDP some. É um dos principais ganhos operacionais do SR sobre MPLS clássico: menos protocolos, menos sincronização, menos casos de borda.
 
-**SR-prefer.** Em equipamentos com LDP e SR habilitados em paralelo (cenário transitório), a flag `sr-prefer` instrui o nó a preferir labels SR sobre os LDP. Em ambientes greenfield SR puro, configura-se ainda assim por consistência.
+**SR-prefer.** Em equipamentos com LDP e SR habilitados em paralelo (cenário transitório), a flag `sr-prefer` instrui o nó a preferir labels SR sobre os LDP. Nenhum lab deste projeto roda LDP, então a flag é omitida nas configurações - presente aqui só como referência para ambientes reais de migração.
 
 ## Convenções adotadas pelo projeto
 
@@ -52,7 +54,7 @@ As convenções a seguir são vinculantes para os labs e materiais subsequentes 
 | Label do node-SID | `16000 + ID` |
 | Network type em interfaces de core | `point-to-point` |
 | Loopback0 em OSPF | `passive` |
-| `sr-prefer` | habilitado |
+| `sr-prefer` | não usado (nenhum lab roda LDP) |
 
 Implicações práticas:
 
@@ -75,7 +77,7 @@ A topologia adotada como ilustração tem cinco nós e foi dimensionada para cab
 Adjacências: `pe1`↔`{p1,p2}`, `pe2`↔`{p1,p2}`, `p3`↔`{p1,p2}`. `p3` não tem enlace com `pe1` nem com `pe2`.
 
 - Caminhos pe1↔pe2 via `p1` e via `p2` são equal-cost (ECMP nativo do IGP).
-- O caminho via `p3` (`pe1—p1—p3—p2—pe2` ou simétrico) é estritamente mais longo, útil quando precisamos forçar tráfego por um caminho não-mais-curto em materiais subsequentes (SR-TE, Flex-Algo).
+- O caminho via `p3` (`pe1-p1-p3-p2-pe2` ou simétrico) é estritamente mais longo, útil quando precisamos forçar tráfego por um caminho não-mais-curto em materiais subsequentes (SR-TE, Flex-Algo).
 
 | Nó | Papel | Loopback0 | Prefix-SID index | Label |
 |---|---|---|---:|---:|
@@ -94,11 +96,11 @@ Adjacências: `pe1`↔`{p1,p2}`, `pe2`↔`{p1,p2}`, `p3`↔`{p1,p2}`. `p3` não 
 | p1↔p3   | p1 Gi0/0/0/2   | `192.0.2.8/31`  | p3 Gi0/0/0/0   | `192.0.2.9/31`  |
 | p3↔p2   | p3 Gi0/0/0/1   | `192.0.2.10/31` | p2 Gi0/0/0/2   | `192.0.2.11/31` |
 
-A topologia é apresentada como ilustração — este artigo não inclui passo-a-passo de bring-up. Os artigos seguintes do projeto trazem ambientes próprios (variando topologia conforme o tema), e este texto é referenciado por eles para a parte conceitual e de convenções.
+A topologia é apresentada como ilustração - este artigo não inclui passo-a-passo de bring-up. Os labs aplicados do projeto (TI-LFA, SR-TE) trazem ambientes próprios com temática Rede Ipê, listados em [`roadmap.md`](./roadmap.md), e referenciam este texto para a parte conceitual e de convenções.
 
 ## Configuração de referência
 
-Os snippets a seguir são padrões reusáveis pelos materiais sucessivos. São apresentados em três blocos consolidados — global, OSPF+SR, interface de core — e em duas instâncias completas (um PE e um P), evitando repetir cinco configurações quase idênticas.
+Os snippets a seguir são padrões reusáveis pelos materiais sucessivos. São apresentados em três blocos consolidados - global, OSPF+SR, interface de core - e em duas instâncias completas (um PE e um P), evitando repetir cinco configurações quase idênticas.
 
 ### Bloco global SR
 
@@ -118,7 +120,6 @@ interface Loopback0
 router ospf 1
  router-id 10.0.0.<ID>
  segment-routing mpls
- segment-routing sr-prefer
  area 0
   segment-routing mpls
   interface Loopback0
@@ -168,7 +169,6 @@ interface GigabitEthernet0/0/0/1
 router ospf 1
  router-id 10.0.0.1
  segment-routing mpls
- segment-routing sr-prefer
  area 0
   segment-routing mpls
   interface Loopback0
@@ -218,7 +218,6 @@ interface GigabitEthernet0/0/0/2
 router ospf 1
  router-id 10.0.0.2
  segment-routing mpls
- segment-routing sr-prefer
  area 0
   segment-routing mpls
   interface Loopback0
@@ -274,7 +273,7 @@ Esperado: o nó local anuncia seu próprio prefix-SID via Opaque LSA do tipo Ext
 show route 10.0.0.5/32 detail
 ```
 
-Esperado: rota OSPF aprendida via duas next-hops (ECMP por `p1` e por `p2`). O detalhe deve mostrar o label outgoing — `16005` — sendo imposto.
+Esperado: rota OSPF aprendida via duas next-hops (ECMP por `p1` e por `p2`). O detalhe deve mostrar o label outgoing - `16005` - sendo imposto.
 
 ### Tabela de MPLS forwarding
 
@@ -307,7 +306,7 @@ A imagem `xrd-control-plane` é, como o nome diz, control plane apenas. Determin
 show cef ipv4 10.0.0.5/32
 ```
 
-Esperado: duas entradas equal-cost referenciando os next-hops `192.0.2.1` e `192.0.2.3`. Se aparecer apenas uma, ECMP não está funcionando como esperado — reveja métricas OSPF e o `network point-to-point` das interfaces.
+Esperado: duas entradas equal-cost referenciando os next-hops `192.0.2.1` e `192.0.2.3`. Se aparecer apenas uma, ECMP não está funcionando como esperado - reveja métricas OSPF e o `network point-to-point` das interfaces.
 
 ## Glossário
 
@@ -341,13 +340,13 @@ Esperado: duas entradas equal-cost referenciando os next-hops `192.0.2.1` e `192
 
 ## Referências
 
-- RFC 8402 — *Segment Routing Architecture*. <https://datatracker.ietf.org/doc/html/rfc8402>
-- RFC 8660 — *Segment Routing with the MPLS Data Plane*. <https://datatracker.ietf.org/doc/html/rfc8660>
-- RFC 8665 — *OSPF Extensions for Segment Routing*. <https://datatracker.ietf.org/doc/html/rfc8665>
-- RFC 8667 — *IS-IS Extensions for Segment Routing*. <https://datatracker.ietf.org/doc/html/rfc8667>
-- RFC 9256 — *Segment Routing Policy Architecture*. <https://datatracker.ietf.org/doc/html/rfc9256>
-- RFC 8277 — *Using BGP to Bind MPLS Labels to Address Prefixes*. <https://datatracker.ietf.org/doc/html/rfc8277>
-- RFC 5737 — *IPv4 Address Blocks Reserved for Documentation*. <https://datatracker.ietf.org/doc/html/rfc5737>
-- Cisco IOS XR 7.10.x — *Segment Routing Configuration Guide*. <https://www.cisco.com/c/en/us/td/docs/iosxr/cisco8000/segment-routing/710x/configuration/guide/b-segment-routing-cg-cisco8000-710x.html>
-- Containerlab — *Cisco XRd kind*. <https://containerlab.dev/manual/kinds/xrd/>
-- CCIE SP v5.1 Labs — *Segment Routing*. <https://ccie-sp.gitbook.io/ccie-spv5.1-labs/labs/sr>
+- RFC 8402 - *Segment Routing Architecture*. <https://datatracker.ietf.org/doc/html/rfc8402>
+- RFC 8660 - *Segment Routing with the MPLS Data Plane*. <https://datatracker.ietf.org/doc/html/rfc8660>
+- RFC 8665 - *OSPF Extensions for Segment Routing*. <https://datatracker.ietf.org/doc/html/rfc8665>
+- RFC 8667 - *IS-IS Extensions for Segment Routing*. <https://datatracker.ietf.org/doc/html/rfc8667>
+- RFC 9256 - *Segment Routing Policy Architecture*. <https://datatracker.ietf.org/doc/html/rfc9256>
+- RFC 8277 - *Using BGP to Bind MPLS Labels to Address Prefixes*. <https://datatracker.ietf.org/doc/html/rfc8277>
+- RFC 5737 - *IPv4 Address Blocks Reserved for Documentation*. <https://datatracker.ietf.org/doc/html/rfc5737>
+- Cisco IOS XR 7.10.x - *Segment Routing Configuration Guide*. <https://www.cisco.com/c/en/us/td/docs/iosxr/cisco8000/segment-routing/710x/configuration/guide/b-segment-routing-cg-cisco8000-710x.html>
+- Containerlab - *Cisco XRd kind*. <https://containerlab.dev/manual/kinds/xrd/>
+- CCIE SP v5.1 Labs - *Segment Routing*. <https://ccie-sp.gitbook.io/ccie-spv5.1-labs/labs/sr>

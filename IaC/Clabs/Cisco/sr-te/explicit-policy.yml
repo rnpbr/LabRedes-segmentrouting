@@ -1,0 +1,39 @@
+name: sr-te-explicit-policy
+
+mgmt:
+  network: mgmt-rede-ipe
+  ipv4-subnet: 172.20.20.0/24
+
+topology:
+  kinds:
+    cisco_xrd:
+      image: ios-xr/xrd-control-plane:7.10.2
+
+  nodes:
+    pop-ce:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.20.11
+      startup-config: configs/pop-ce.cfg
+    pop-sp:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.20.12
+      startup-config: configs/pop-sp.cfg
+    pop-ba:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.20.13
+      startup-config: configs/pop-ba.cfg
+    pop-mg:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.20.14
+      startup-config: configs/pop-mg.cfg
+    pop-rj:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.20.15
+      startup-config: configs/pop-rj.cfg
+
+  links:
+    - endpoints: ["pop-ce:Gi0-0-0-0", "pop-sp:Gi0-0-0-0"]
+    - endpoints: ["pop-ce:Gi0-0-0-1", "pop-ba:Gi0-0-0-0"]
+    - endpoints: ["pop-sp:Gi0-0-0-1", "pop-rj:Gi0-0-0-0"]
+    - endpoints: ["pop-ba:Gi0-0-0-1", "pop-mg:Gi0-0-0-0"]
+    - endpoints: ["pop-mg:Gi0-0-0-1", "pop-rj:Gi0-0-0-1"]

@@ -2,7 +2,7 @@
 
 ## Contexto
 
-Este lab assume os conceitos apresentados em [`sr_ti-lfa_concepts.md`](../sr_ti-lfa_concepts.md) e a fundação de SR-MPLS em [`Docs/base.md`](../../Docs/base.md). Se o cenário Zero-Segment ainda não foi executado, vale rodar aquele primeiro - a diferença entre os dois cenários é justamente o ponto central deste material.
+Este lab assume os conceitos apresentados em [`concepts.md`](../concepts.md) e a fundação de SR-MPLS em [`Docs/base.md`](../../../../../Docs/base.md). Se o cenário Zero-Segment ainda não foi executado, vale rodar aquele primeiro - a diferença entre os dois cenários é justamente o ponto central deste material.
 
 No Zero-Segment, o PQ-node é vizinho direto do PLR: o backup não precisa de nenhum label além do Node-SID do destino, porque "chegar ao PQ-node" é apenas "sair por essa interface física". Aqui o PQ-node está **dois saltos** do PLR - alcançável através de um vizinho, mas não sendo ele próprio vizinho. Isso muda o backup de zero labels adicionais para **um** label adicional: o Node-SID do PQ-node, empilhado abaixo do Node-SID do destino final.
 
@@ -82,15 +82,15 @@ SRGB `16000-23999`, sem `local-block` explícito - Adj-SIDs saem do range dinâm
 ## Deploy
 
 ```bash
-mkdir -p ~/labs/sr-mpls/cisco/tilfa-single-segment
-cd ~/labs/sr-mpls/cisco/tilfa-single-segment
+mkdir -p ~/labs/sr-mpls/cisco/ti-lfa/single-segment
+cd ~/labs/sr-mpls/cisco/ti-lfa/single-segment
 ```
 
 Copiar a topologia e as configurações do repositório:
 
 ```bash
-cp IaC/Clabs/Cisco/ti_lfa_rede-ipe/tilfa-single-segment.yml lab.clab.yml
-cp -r TI-LFA/single-segment/configs .
+cp IaC/Clabs/Cisco/ti-lfa/single-segment.yml lab.clab.yml
+cp -r Labs/Cisco/SR-MPLS/TI-LFA/single-segment/configs .
 ```
 
 O YAML referencia cada arquivo `.cfg` via `startup-config`, então os seis nós já sobem configurados - não é necessário aplicar manualmente, embora a tabela de endereçamento acima sirva de referência caso seja preciso revisar algo via `ssh clab@<mgmt-ip>` (senha `clab@123`).
