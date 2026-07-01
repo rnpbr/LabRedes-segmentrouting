@@ -1,0 +1,45 @@
+name: tilfa-microloop-avoidance
+
+mgmt:
+  network: tilfa-microloop-mgmt
+  ipv4-subnet: 172.20.25.0/24
+
+topology:
+  kinds:
+    cisco_xrd:
+      image: ios-xr/xrd-control-plane:7.10.2
+
+  nodes:
+    sp:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.25.11
+      startup-config: configs/sp.cfg
+    df:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.25.12
+      startup-config: configs/df.cfg
+    rj:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.25.13
+      startup-config: configs/rj.cfg
+    mg:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.25.15
+      startup-config: configs/mg.cfg
+    pr:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.25.16
+      startup-config: configs/pr.cfg
+    ba:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.25.17
+      startup-config: configs/ba.cfg
+
+  links:
+    # anel hexagonal: SP-PR-DF-BA-MG-RJ-SP
+    - endpoints: ["sp:Gi0-0-0-1", "pr:Gi0-0-0-0"]   # SP-PR, custo 10 (arco curto)
+    - endpoints: ["pr:Gi0-0-0-1", "df:Gi0-0-0-0"]   # PR-DF, custo 10 (arco curto - falha testada aqui)
+    - endpoints: ["df:Gi0-0-0-1", "ba:Gi0-0-0-0"]   # DF-BA, custo 100 (ultimo salto do arco longo)
+    - endpoints: ["ba:Gi0-0-0-1", "mg:Gi0-0-0-1"]   # BA-MG, custo 10 (arco longo)
+    - endpoints: ["mg:Gi0-0-0-0", "rj:Gi0-0-0-1"]   # MG-RJ, custo 10 (arco longo)
+    - endpoints: ["rj:Gi0-0-0-0", "sp:Gi0-0-0-0"]   # RJ-SP, custo 10 (arco longo)
