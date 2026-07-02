@@ -24,7 +24,7 @@ LabRedes-segmentrouting/
 ├── Labs/
 │   └── Cisco/
 │       └── SR-MPLS/
-│           ├── TI-LFA/     # zero/single/double-segment, node+SRLG, microloop
+│           ├── TI-LFA/     # zero/single/double-segment, node+SRLG
 │           └── SR-TE/      # explicit-policy
 │
 └── IaC/
@@ -55,4 +55,4 @@ Planejado, sem lab ainda. Ver `Docs/roadmap.md`.
 
 ### Multi-domínio / Inter-domínio
 
-Em desenvolvimento por outra pessoa em branch separada (`feature/multidomain-ospf`), ainda não mergeada. Ver `Docs/roadmap.md` para o que já existe lá.
+Em desenvolvimento 

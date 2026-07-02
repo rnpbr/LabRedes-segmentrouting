@@ -40,8 +40,6 @@ O `docker load` já produz a tag local usada em todos os labs deste projeto: `io
 docker tag <tag-original> ios-xr/xrd-control-plane:7.10.2
 ```
 
-Sem acesso a CCO, uma alternativa para estudo (não suportada pela Cisco, mantida pela comunidade) é a imagem espelhada por [sbezverk](https://hub.docker.com/r/sbezverk/xrd-control-plane) no Docker Hub - troque a referência `image:` nos arquivos `.clab.yml` de acordo.
-
 ## Preparar limites de inotify
 
 Labs com muitos nós (a partir de ~6-8) costumam esbarrar em limites default de `inotify` do host:
@@ -66,8 +64,6 @@ Todo lab deste projeto segue o mesmo padrão de deploy:
 ```bash
 mkdir -p ~/labs/sr-mpls/<caminho-do-lab>
 cd ~/labs/sr-mpls/<caminho-do-lab>
-cp IaC/Clabs/Cisco/<categoria>/<lab>.yml lab.clab.yml
-cp -r Labs/Cisco/SR-MPLS/<Categoria>/<lab>/configs .
 sudo clab deploy -t lab.clab.yml
 ```
 

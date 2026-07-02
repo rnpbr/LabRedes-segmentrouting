@@ -13,19 +13,15 @@ topology:
     sp:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.21.11
-      startup-config: configs/sp.cfg
     df:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.21.12
-      startup-config: configs/df.cfg
     mg:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.21.15
-      startup-config: configs/mg.cfg
     ba:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.21.17
-      startup-config: configs/ba.cfg
 
   links:
     - endpoints: ["sp:Gi0-0-0-0", "df:Gi0-0-0-0"]

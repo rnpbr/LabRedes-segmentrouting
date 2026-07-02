@@ -12,7 +12,7 @@ Uma SR Policy no PoP-CE força o tráfego sensível a latência (videoconferênc
 
 ## Conceitos aplicados
 
-- **Waypoint**: nó intermediário incluído explicitamente na segment list. Aqui, PoP-BA e PoP-MG.
+- **Waypoint**: nodeintermediário incluído explicitamente na segment list. Aqui, PoP-BA e PoP-MG.
 - **DSCP EF / Color**: em produção a policy seria selecionada por Color BGP e o tráfego direcionado por marcação DSCP; este lab simplifica o steering via rota estática `sr-policy`.
 - **SRGB compartilhado**: SRGB 16000-23999 em todos os PoPs. Label = `16000 + SID index`.
 
@@ -87,7 +87,7 @@ router static
   10.0.0.5/32 sr-policy srte_c_100_ep_10.0.0.5
 ```
 
-A segment list `[16300, 16350, 16400]` é literalmente a sequência de Node-SIDs de BA, MG e RJ - o headend empilha os três, e cada nó intermediário faz pop do seu próprio label e encaminha nativamente para o próximo. A rota estática redireciona `10.0.0.5/32` (loopback de PoP-RJ) para a policy pelo nome gerado automaticamente pelo IOS-XR (`srte_c_<color>_ep_<endpoint>`).
+A segment list `[16300, 16350, 16400]` é literalmente a sequência de Node-SIDs de BA, MG e RJ - o headend empilha os três, e cada nodeintermediário faz pop do seu próprio label e encaminha nativamente para o próximo. A rota estática redireciona `10.0.0.5/32` (loopback de PoP-RJ) para a policy pelo nome gerado automaticamente pelo IOS-XR (`srte_c_<color>_ep_<endpoint>`).
 
 ## Verificação
 

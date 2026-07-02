@@ -13,27 +13,21 @@ topology:
     sp:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.25.11
-      startup-config: configs/sp.cfg
     df:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.25.12
-      startup-config: configs/df.cfg
     rj:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.25.13
-      startup-config: configs/rj.cfg
     mg:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.25.15
-      startup-config: configs/mg.cfg
     pr:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.25.16
-      startup-config: configs/pr.cfg
     ba:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.25.17
-      startup-config: configs/ba.cfg
 
   links:
     # anel hexagonal: SP-PR-DF-BA-MG-RJ-SP

@@ -13,27 +13,21 @@ topology:
     sp:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.22.11
-      startup-config: configs/sp.cfg
     df:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.22.12
-      startup-config: configs/df.cfg
     rj:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.22.13
-      startup-config: configs/rj.cfg
     es:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.22.14
-      startup-config: configs/es.cfg
     mg:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.22.15
-      startup-config: configs/mg.cfg
     ba:
       kind: cisco_xrd
       mgmt-ipv4: 172.20.22.17
-      startup-config: configs/ba.cfg
 
   links:
     # SP <-> DF: link protegido (protected link), custo 10 nos dois lados

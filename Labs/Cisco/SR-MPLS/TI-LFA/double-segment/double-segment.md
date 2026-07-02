@@ -10,28 +10,19 @@ Essa mudança é suficiente para quebrar a interseção entre P-space e Q-space 
 
 ## Este lab
 
-Mesma topologia física do single-segment:
-
-```text
-        SP ─────────────────── DF ─── ES
-         \                     /
-          \                   /
-           RJ ─── MG ══1000══ BA ─┘
-```
-
-(o `══1000══` marca o enlace MG-BA com custo elevado; todos os demais enlaces permanecem custo 10, incluindo o link protegido SP-DF).
+Mesma topologia física do single-segment - anel SP-RJ-MG-BA-DF-SP com o pendant ES atrás de DF. Muda só um número: o enlace MG-BA sobe de custo 10 para **1000**. Todos os demais enlaces, incluindo o link protegido SP-DF, seguem custo 10.
 
 ### Por que o double-segment aparece
 
-Refazendo o cálculo de P-space e Q-space com o novo custo:
+Refazendo o cálculo de P-space (estendido, via o vizinho RJ) e Q-space com o novo custo:
 
-**P-space(SP, SP-DF)** - inalterado em relação ao single-segment, porque nenhum caminho relevante *a partir de SP* passa pelo enlace MG-BA:
+**P-space estendido(SP, SP-DF)** - inalterado em relação ao single-segment, porque nenhum caminho relevante *a partir de SP ou de RJ* passa pelo enlace MG-BA:
 
-| Nó | Caminho mais curto a partir de SP | No P-space? |
+| Nó | Caminho mais curto | No P-space? |
 |---|---|:-:|
-| RJ | `SP-RJ` (10) | **sim** |
-| MG | `SP-RJ-MG` (20) | **sim** |
-| BA | `SP-DF-BA` (20, usa o link protegido) | não |
+| RJ | `SP-RJ` (10) | **sim** (direto) |
+| MG | `SP-RJ-MG` (20) | **sim** (direto) |
+| BA | de SP: `SP-DF-BA` (20, usa o link protegido). De RJ: `RJ-SP-DF-BA` (30, usa o link) contra `RJ-MG-BA` (1010) | **não** - o caminho mais curto de RJ até BA também acaba usando o link protegido, já que `RJ-MG-BA` ficou caro demais com o novo custo |
 
 **Q-space(ES, SP-DF)** - aqui o custo 1000 em MG-BA muda tudo:
 
@@ -41,9 +32,9 @@ Refazendo o cálculo de P-space e Q-space com o novo custo:
 | MG | `MG-BA-DF-ES` (1020) contra `MG-RJ-SP-DF-ES` (40, usa o link protegido) | o mais barato usa o link protegido | **não** |
 | RJ | `RJ-SP-DF-ES` (30, usa o link protegido) | sim | não |
 
-Com MG-BA custando 1000, o caminho de MG até ES que evita o link protegido (`MG-BA-DF-ES`, custo 1020) deixou de ser competitivo - o caminho mais curto real de MG passa a ser via SP, isto é, via o próprio link que caiu. MG sai do Q-space.
+Com MG-BA custando 1000, o caminho de MG até ES que evita o link protegido (`MG-BA-DF-ES`, custo 1020) deixou de ser competitivo - o caminho mais curto real de MG passa a ser via SP, isto é, via o próprio link que caiu. MG sai do Q-space. Pelo mesmo motivo (o mesmo enlace caro), BA sai do P-space estendido de RJ.
 
-**P-space ∩ Q-space = ∅.** Não existe mais nenhum nó que sirva simultaneamente de "alcançável sem cruzar a falha" e "alcança o destino sem cruzar a falha". P-space = {RJ, MG}, Q-space = {BA}, e MG é vizinho físico de BA - essa adjacência é o que permite ao TI-LFA ainda calcular um backup, "pulando" de P-space para Q-space por um enlace específico em vez de por caminho mais curto.
+**P-space ∩ Q-space = ∅.** P-space estendido = `{RJ, MG}`, Q-space = `{BA}` - nenhum nó comum aos dois. Mas MG é vizinho físico direto de BA - essa adjacência é o que permite ao TI-LFA ainda calcular um backup, "pulando" de P-space para Q-space por um enlace específico em vez de por caminho mais curto. Diferente do single-segment, aqui só existe um candidato possível de cada lado (MG do P-space, BA do Q-space) - sem ambiguidade.
 
 Backup calculado: `push { prefix-SID(MG) 16005, Adj-SID(MG->BA) }` abaixo do `prefix-SID(ES) 16004`. O Adj-SID força a travessia do enlace MG-BA especificamente - ignorando seu custo IGP de 1000 - porque Adj-SID não é uma instrução de "caminho mais curto", é uma instrução de "saia exatamente por este enlace".
 
@@ -93,9 +84,11 @@ cp -r Labs/Cisco/SR-MPLS/TI-LFA/double-segment/configs .
 sudo clab deploy -t lab.clab.yml
 ```
 
+![alt text](image.png)
+
 ```bash
 # Derrubar o lab
-sudo clab destroy -t lab.clab.yml
+sudo clab destroy -t lab.clab.yml --cleanup
 ```
 
 ---
@@ -103,10 +96,12 @@ sudo clab destroy -t lab.clab.yml
 ## Verificação
 
 ### 1. Adjacências OSPF
+**EM SP**
 
 ```
 show ospf neighbor
 ```
+![alt text](image-1.png)
 
 Igual ao single-segment - seis nós, todas as adjacências `FULL/-`. A interface MG-BA continua formando adjacência normalmente; custo alto não impede a adjacência OSPF, apenas torna o enlace pouco atrativo para SPF.
 
@@ -118,61 +113,43 @@ Em MG:
 show ospf interface GigabitEthernet0/0/0/1
 ```
 
+![alt text](image-2.png)
+
 (ajustar o número da interface conforme o `.cfg`). Esperado: `Cost: 1000`.
 
 ### 3. Backup TI-LFA para ES
 
+**Em SP**:
+
 ```
 show cef 10.0.1.251/32 detail
 ```
+![alt text](image-3.png)
 
-O campo `labels imposed` na entrada de backup deve mostrar **três** labels desta vez: `{16005, 24XXX, 16004}` - 16005 (prefix-SID de MG), um label dinâmico de Adjacency-SID (na faixa acima de 24000, já que este projeto não configura `local-block` separado) representando o enlace MG->BA, e por fim 16004 (prefix-SID de ES).
+
+O campo `labels imposed` na entrada de backup deve mostrar **três** labels: `{16005, 24XXX, 16004}` - 16005 (prefix-SID de MG) no topo, um Adjacency-SID dinâmico (faixa acima de 24000, já que este projeto não configura `local-block` separado) representando o enlace MG->BA no meio, e 16004 (prefix-SID de ES) embaixo.
+
+**Em MG**, para identificar exatamente qual Adjacency-SID é esse:
 
 ```
-show mpls forwarding | include 16005
 show ospf segment-routing adjacency-sids
 ```
 
-O segundo comando, rodado em MG, deve listar um Adjacency-SID para a interface MG-BA - é esse label específico que aparece no meio da pilha do backup de SP.
+![alt text](image-4.png)
+Esperado: uma linha com `Neighbor ID 10.0.1.248` (BA) e `Interface Gi0/0/0/1` - o número na coluna `Adj SID` dessa linha é o mesmo `24XXX` que apareceu no meio da pilha do `show cef` de SP. Normalmente aparecem duas entradas para o mesmo vizinho (uma `U` desprotegida, uma `P B` protegida com backup) - qualquer uma das duas pode ser a usada, dependendo de qual o backup do próprio MG está usando no momento.
 
 ### 4. Diferença de comportamento vs. single-segment
 
-Repita a mesma consulta que foi feita no lab single-segment (`show cef 10.0.1.251/32 detail` em SP) e compare lado a lado:
+Compare com o `show cef` do single-segment (rodado em SP também, lá):
 
 | | single-segment | double-segment |
 |---|---|---|
-| Labels impostos | `{16005, 16004}` (2) | `{16005, adj-SID, 16004}` (3) |
-| MG participa como | PQ-node (P∩Q) | P-node apenas |
-| BA participa como | trânsito nativo, fora do path calculado | Q-node, alvo do Adj-SID |
-| Enlace MG-BA | usado por custo (parte do caminho nativo pós-MG) | usado por Adj-SID (custo irrelevante) |
-
-### 5. Simulação de falha
-
-```
-conf t
-interface GigabitEthernet0/0/0/0
- shutdown
-commit
-end
-```
-
-```
-traceroute 10.0.1.251 source 10.0.1.254
-```
-
-Esperado: quatro saltos -
-
-```
-1  10.10.13.2   [MPLS: Label 16005, Label 24XXX]   (RJ)
-2  10.10.35.2   [MPLS: Label 24XXX]                (MG)
-3  10.10.57.2   [MPLS: Label 16004]                (BA)
-4  10.10.27.1                                       (DF, ultimo hop)
-```
-
-Em MG, note que o label de topo já não é mais o próprio Node-SID de MG (que teria sido removido por PHP ao chegar) - é o Adjacency-SID, que só faz sentido *localmente em MG* e instrui: "saia especificamente pela interface para BA, não pelo caminho mais curto". Esse é o comportamento que distingue definitivamente um Adj-SID de um Prefix-SID em uso: Prefix-SID é sempre uma instrução de alcançabilidade ("chegue a este nó, por qualquer caminho"); Adj-SID é sempre uma instrução de adjacência ("saia por este enlace, especificamente").
+| Labels impostos | `{16007, 16004}` (2) | `{16005, adj-SID, 16004}` (3) |
+| Nó intermediário participa como | PQ-node (P∩Q) | P-node apenas, precisa do Adj-SID pra alcançar o Q-node |
+| Enlace até o Q-node | usado por custo (parte do caminho nativo) | usado por Adj-SID (custo do enlace irrelevante) |
 
 ---
 
 ## Quando isso acontece na prática
 
-Em produção, um custo de 1000 artificial não é o gatilho real - a situação double-segment aparece organicamente em topologias com poucos caminhos alternativos entre certas regiões da rede (redes em anel, topologias regionais com poucos backbones de trânsito, ou depois que um terceiro enlace já está indisponível e a rede está operando com menos redundância que o normal). O ponto pedagógico deste lab é isolar a condição - P-space e Q-space sem interseção, mas com um enlace físico entre os dois - para observar exatamente como o TI-LFA resolve o problema quando ele aparece.
+Em produção, um custo de 1000 artificial não é o gatilho real - a situação double-segment aparece organicamente em topologias com poucos caminhos alternativos entre certas regiões da rede (redes em anel, topologias regionais com poucos backbones de trânsito, ou depois que um terceiro

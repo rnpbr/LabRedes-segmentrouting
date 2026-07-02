@@ -16,13 +16,6 @@ Para instalar o ambiente, ver [`setup.md`](./setup.md). Para os conceitos, [`bas
 4. SR-TE: [`explicit-policy`](../Labs/Cisco/SR-MPLS/SR-TE/explicit-policy/explicit-policy.md), independente da trilha de TI-LFA.
 5. Demais categorias abaixo, conforme forem saindo do papel.
 
-## Fundamentos SR-MPLS
-
-| Cenário | Status | Onde |
-|---|---|---|
-| Prefix-SID/Node-SID, SRGB/SRLB, OSPFv2 com extensões SR | Concluído | `Docs/base.md` |
-| Mesmo fundamento sobre IS-IS em vez de OSPFv2 | Planejado | - |
-| BGP-LU (RFC 8277) para estender alcance MPLS além do IGP | Planejado | mencionado em `base.md` (glossário), sem lab |
 
 ## TI-LFA / Fast Reroute
 
@@ -33,8 +26,8 @@ Para instalar o ambiente, ver [`setup.md`](./setup.md). Para os conceitos, [`bas
 | Double-segment (P-node + Adj-SID até Q-node) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/double-segment/` |
 | Node protection (tiebreaker) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/node-srlg-protection/` |
 | SRLG protection (tiebreaker + grupos) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/node-srlg-protection/` |
-| Microloop avoidance (reconvergência pós-FRR) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/microloop-avoidance/` |
-| LFA e Remote LFA (contexto histórico, pré-TI-LFA) | Concluído (conceitual, sem lab próprio) | `concepts.md` e `zero-segment.md` |
+| Microloop avoidance (reconvergência pós-FRR) | Planejado | `Labs/Cisco/SR-MPLS/TI-LFA/microloop-avoidance/` |
+
 
 ## SR-TE / SR Policy
 
