@@ -39,18 +39,12 @@ Para instalar o ambiente, ver [`setup.md`](./setup.md). Para os conceitos, [`bas
 | Policy stitching / binding-SID recursivo | Planejado | - |
 | Weighted ECMP entre candidate paths | Planejado | - |
 
-## Flexible Algorithm
-
-| Cenário | Status | Onde |
-|---|---|---|
-| Flex-Algo básico (affinity exclude, SID por algoritmo) | Planejado | existia como referência solta em inglês (`Docs/References/`), removida nesta rodada; será refeita como lab Rede Ipê |
-| Flex-Algo com SID anycast de borda entre domínios | Em andamento (branch separada) | `feature/multidomain-ospf` |
 
 ## SRv6
 
 | Cenário | Status | Onde |
 |---|---|---|
-| SRv6 básico (locators, End SIDs) | Planejado | stub vazio removido nesta rodada, sem conteúdo ainda |
+| SRv6 básico (locators, End SIDs) | Planejado |  |
 | SRv6 Network Programming (uSID) | Planejado | - |
 
 ## Multi-domínio / Inter-domínio
@@ -61,7 +55,6 @@ Para instalar o ambiente, ver [`setup.md`](./setup.md). Para os conceitos, [`bas
 | Seamless MPLS / BGP-LU interdomínio | Planejado | - |
 | SR-PCE com visão de topologia interdomínio | Planejado | - |
 
-O lab de multi-domínio em desenvolvimento é de outra pessoa. Não foi incorporado nesta rodada de padronização - a entrada acima existe só para reservar o lugar na estrutura e evitar conflito quando a branch for mergeada.
 
 ## Multivendor
 
@@ -72,12 +65,3 @@ O lab de multi-domínio em desenvolvimento é de outra pessoa. Não foi incorpor
 | Nokia SR OS - idem | Planejado | idem (`Labs/Nokia/`) |
 | Interoperabilidade Cisco + outro vendor no mesmo domínio SR | Planejado | - |
 
-Os stubs de vendor vistos em `feature/multidomain-ospf` estão vazios e com caminho incorreto (`Labs/Juniper/Huawei/juniper.md`, `Labs/Nokia/Huawei/nokia.md`) - corrigir o caminho ao mergear, não recriar a partir daqui.
-
-## OAM e operação
-
-| Cenário | Status | Onde |
-|---|---|---|
-| Verificação básica de plano de controle (neighbors, prefix-sid-map, CEF) | Concluído | coberto em todo lab individual |
-| `ping`/`traceroute mpls nil-fec` com stack explícito | Planejado | mencionado em referência removida, sem lab dedicado |
-| `traceroute sr-mpls policy` (requer forwarding-plane completo) | Bloqueado | imagem XRd control-plane não suporta; precisa de imagem com forwarding plane |

@@ -8,15 +8,17 @@ Segment Routing simplifica redes MPLS eliminando protocolos de sinalização com
 
 ## Por onde começar
 
-1. [`Docs/base.md`](./Docs/base.md) - conceitos, convenções do projeto, topologia de referência.
-2. [`Docs/setup.md`](./Docs/setup.md) - Docker, Containerlab, imagem XRd, problemas comuns.
-3. [`Docs/roadmap.md`](./Docs/roadmap.md) - todo cenário clássico de SR no escopo do projeto, com status e ordem sugerida.
+
+1. [`Docs/Cisco Labs/roadmap.md`](./Docs/roadmap.md) - todo cenário clássico de SR no escopo do projeto, com status e ordem sugerida.
+2. [`Docs/Cisco Labs/base.md`](./Docs/base.md) - conceitos, convenções do projeto, topologia de referência.
+3. [`Docs/Cisco Labs/setup.md`](./Docs/setup.md) - Docker, Containerlab, imagem XRd, problemas comuns.
+ 
 
 ## Estrutura
 
 ```text
 LabRedes-segmentrouting/
-├── Docs/
+├── Docs/Cisco Labs/
 │   ├── base.md            # conceitos e convenções (pré-requisito de todo lab)
 │   ├── setup.md           # ambiente: Docker, Containerlab, imagem XRd
 │   └── roadmap.md         # índice de cenários, status, ordem sugerida
@@ -44,14 +46,10 @@ Cada lab fica em `Labs/Cisco/SR-MPLS/<categoria>/<lab>/`, com o markdown do lab,
 | [single-segment](./Labs/Cisco/SR-MPLS/TI-LFA/single-segment/single-segment.md) | TI-LFA | PQ-node via Ext P-space, um segmento extra |
 | [double-segment](./Labs/Cisco/SR-MPLS/TI-LFA/double-segment/double-segment.md) | TI-LFA | P-space e Q-space disjuntos, Adj-SID como ponte |
 | [node-srlg-protection](./Labs/Cisco/SR-MPLS/TI-LFA/node-srlg-protection/node-srlg-protection.md) | TI-LFA | Tiebreakers de proteção de nó e SRLG |
-| [microloop-avoidance](./Labs/Cisco/SR-MPLS/TI-LFA/microloop-avoidance/microloop-avoidance.md) | TI-LFA | SID-list temporário durante reconvergência |
 | [explicit-policy](./Labs/Cisco/SR-MPLS/SR-TE/explicit-policy/explicit-policy.md) | SR-TE | Segment list estática forçando caminho de menor latência |
 
-Todo cenário clássico de SR fora desta lista (Flex-Algo, SRv6, multi-domínio, ODN, etc.) está listado com status em [`Docs/roadmap.md`](./Docs/roadmap.md), concluído ou não.
+Todo cenário clássico de SR fora desta lista (Flex-Algo, SRv6, multi-domínio, ODN, etc.) está listado com status em `Docs/Cisco Labs/roadmap.md`, concluído ou não.
 
-### Huawei / Juniper / Nokia / Multivendor
-
-Planejado, sem lab ainda. Ver `Docs/roadmap.md`.
 
 ### Multi-domínio / Inter-domínio
 
