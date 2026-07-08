@@ -1,0 +1,41 @@
+name: tilfa-single-segment
+
+mgmt:
+  network: tilfa-single-segment-mgmt
+  ipv4-subnet: 172.20.22.0/24
+
+topology:
+  kinds:
+    cisco_xrd:
+      image: ios-xr/xrd-control-plane:7.10.2
+
+  nodes:
+    sp:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.22.11
+    df:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.22.12
+    rj:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.22.13
+    es:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.22.14
+    mg:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.22.15
+    ba:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.22.17
+
+  links:
+    # SP <-> DF: link protegido (protected link), custo 10 nos dois lados
+    - endpoints: ["sp:Gi0-0-0-0", "df:Gi0-0-0-0"]
+    # anel de backup: SP -> RJ -> MG -> BA -> DF
+    - endpoints: ["sp:Gi0-0-0-1", "rj:Gi0-0-0-0"]
+    - endpoints: ["rj:Gi0-0-0-1", "mg:Gi0-0-0-0"]
+    - endpoints: ["mg:Gi0-0-0-1", "ba:Gi0-0-0-1"]
+    - endpoints: ["ba:Gi0-0-0-0", "df:Gi0-0-0-2"]
+    # pendant ES, destino do backup single-segment (além de DF)
+    - endpoints: ["df:Gi0-0-0-1", "es:Gi0-0-0-0"]

@@ -1,0 +1,43 @@
+name: tilfa-node-srlg-protection
+
+mgmt:
+  network: tilfa-node-srlg-mgmt
+  ipv4-subnet: 172.20.24.0/24
+
+topology:
+  kinds:
+    cisco_xrd:
+      image: ios-xr/xrd-control-plane:7.10.2
+
+  nodes:
+    sp:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.24.11
+    df:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.24.12
+    rj:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.24.13
+    mg:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.24.15
+    pr:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.24.16
+    ba:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.24.17
+
+  links:
+    # cadeia primaria: SP -> MG -> BA -> DF
+    - endpoints: ["sp:Gi0-0-0-1", "mg:Gi0-0-0-0"]   # SP-MG: link/no protegido, custo 10
+    - endpoints: ["mg:Gi0-0-0-3", "ba:Gi0-0-0-1"]   # MG-BA, custo 10
+    - endpoints: ["ba:Gi0-0-0-0", "df:Gi0-0-0-0"]   # BA-DF, custo 10
+    # ponte alta: SP -> RJ -> PR -> {MG, BA}
+    - endpoints: ["sp:Gi0-0-0-0", "rj:Gi0-0-0-0"]   # SP-RJ, custo 10
+    - endpoints: ["rj:Gi0-0-0-2", "pr:Gi0-0-0-0"]   # RJ-PR, custo 100
+    - endpoints: ["pr:Gi0-0-0-1", "mg:Gi0-0-0-2"]   # PR-MG (rejoin apos falha de link), custo 100
+    - endpoints: ["pr:Gi0-0-0-2", "ba:Gi0-0-0-2"]   # PR-BA (rejoin apos falha de node MG), custo 100
+    # atalho RJ-MG: mesma canaleta fisica do link SP-MG (SRLG ipe-mg-duct)
+    - endpoints: ["rj:Gi0-0-0-1", "mg:Gi0-0-0-1"]   # RJ-MG, custo 15, SRLG-compartilhado com SP-MG

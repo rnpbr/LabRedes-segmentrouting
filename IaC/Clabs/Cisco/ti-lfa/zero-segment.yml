@@ -1,0 +1,31 @@
+name: tilfa-zero-segment
+
+mgmt:
+  network: mgmt-tilfa-zero
+  ipv4-subnet: 172.20.21.0/24
+
+topology:
+  kinds:
+    cisco_xrd:
+      image: ios-xr/xrd-control-plane:7.10.2
+
+  nodes:
+    sp:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.21.11
+    df:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.21.12
+    mg:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.21.15
+    ba:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.21.17
+
+  links:
+    - endpoints: ["sp:Gi0-0-0-0", "df:Gi0-0-0-0"]
+    - endpoints: ["sp:Gi0-0-0-1", "mg:Gi0-0-0-0"]
+    - endpoints: ["mg:Gi0-0-0-1", "df:Gi0-0-0-1"]
+    - endpoints: ["mg:Gi0-0-0-2", "ba:Gi0-0-0-0"]
+    - endpoints: ["ba:Gi0-0-0-1", "df:Gi0-0-0-2"]

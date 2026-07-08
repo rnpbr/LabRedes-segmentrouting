@@ -1,0 +1,43 @@
+name: tilfa-double-segment
+
+mgmt:
+  network: tilfa-double-segment-mgmt
+  ipv4-subnet: 172.20.23.0/24
+
+topology:
+  kinds:
+    cisco_xrd:
+      image: ios-xr/xrd-control-plane:7.10.2
+
+  nodes:
+    sp:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.23.11
+    df:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.23.12
+    rj:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.23.13
+    es:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.23.14
+    mg:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.23.15
+    ba:
+      kind: cisco_xrd
+      mgmt-ipv4: 172.20.23.17
+
+  links:
+    # SP <-> DF: link protegido, custo 10
+    - endpoints: ["sp:Gi0-0-0-0", "df:Gi0-0-0-0"]
+    # anel: SP -> RJ -> MG -> BA -> DF
+    - endpoints: ["sp:Gi0-0-0-1", "rj:Gi0-0-0-0"]
+    - endpoints: ["rj:Gi0-0-0-1", "mg:Gi0-0-0-0"]
+    # MG <-> BA: mesmo enlace do lab single-segment, mas aqui com custo 1000
+    # (o que impede a intersecao de P-space e Q-space e forca o double-segment)
+    - endpoints: ["mg:Gi0-0-0-1", "ba:Gi0-0-0-1"]
+    - endpoints: ["ba:Gi0-0-0-0", "df:Gi0-0-0-2"]
+    # pendant ES, destino do backup double-segment (alem de DF)
+    - endpoints: ["df:Gi0-0-0-1", "es:Gi0-0-0-0"]
