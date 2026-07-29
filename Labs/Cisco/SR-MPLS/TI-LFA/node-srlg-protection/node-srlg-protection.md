@@ -98,19 +98,28 @@ Em vermelho, o enlace/nó sob teste (SP-MG). Em dourado tracejado, as duas alter
 ## Deploy
 
 ```bash
-mkdir -p ~/labs/sr-mpls/cisco/ti-lfa/node-srlg-protection
-cd ~/labs/sr-mpls/cisco/ti-lfa/node-srlg-protection
-cp IaC/Clabs/Cisco/ti-lfa/node-srlg-protection.yml lab.clab.yml
-cp -r Labs/Cisco/SR-MPLS/TI-LFA/node-srlg-protection/configs .
-sudo clab deploy -t lab.clab.yml
+git clone https://github.com/rnpbr/LabRedes-segmentrouting.git
+cd LabRedes-segmentrouting
+
+mkdir -p ~/labs/ti-lfa/node-srlg-protection
+cp IaC/Clabs/Cisco/ti-lfa/node-srlg-protection.clab.yml ~/labs/ti-lfa/node-srlg-protection/
+cp -r Labs/Cisco/SR-MPLS/TI-LFA/node-srlg-protection/configs ~/labs/ti-lfa/node-srlg-protection/
+
+cd ~/labs/ti-lfa/node-srlg-protection
+sudo clab deploy -t node-srlg-protection.clab.yml
 ```
 
-![alt text](image.png)
+Seis nós e oito enlaces, de 10 a 12 GB de RAM.
+
+Acesso: `ssh clab@172.20.24.11`, senha `clab@123`. Ou `sudo docker exec -it clab-tilfa-node-srlg-protection-sp /pkg/bin/xr_cli.sh`.
+
+![Nós do lab apos o clab deploy](./images/terminal-deploy.png)
 
 ```bash
 # Derrubar o lab
-sudo clab destroy -t lab.clab.yml --cleanup
+sudo clab destroy -t node-srlg-protection.clab.yml --cleanup
 ```
+
 
 ---
 
@@ -137,7 +146,7 @@ Em SP:
 show ospf routes 10.0.1.253/32 backup-path
 ```
 
-![alt text](image-1.png)
+![show ospf routes 10.0.1.253/32 backup-path em SP](./images/terminal-backup-path.png)
 
 Esperado:
 
@@ -203,7 +212,7 @@ end
 traceroute 10.0.1.253 source 10.0.1.254
 ```
 
-![alt text](image-3.png)
+![shutdown da Gi0/0/0/1 e traceroute em SP](./images/terminal-traceroute-link.png)
 
 **Atenção ao timing.** Se o traceroute rodar alguns segundos depois do shutdown, a rede já reconvergiu de verdade - e nesse caso o caminho novo tende a reusar o atalho RJ-MG (custo mais barato), não passar por PR:
 
@@ -240,7 +249,7 @@ Em SP:
 traceroute 10.0.1.253 source 10.0.1.254
 ```
 
-![alt text](image-2.png)
+![docker stop do no MG e traceroute em SP](./images/terminal-traceroute-node.png)
 
 Esperado:
 

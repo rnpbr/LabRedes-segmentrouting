@@ -2,7 +2,7 @@
 
 ## Contexto
 
-Este lab assume os conceitos apresentados em [`concepts.md`](../concepts.md) e a fundação de SR-MPLS em [`Docs/base.md`](../../../../../Docs/base.md). Se o cenário Zero-Segment ainda não foi executado, vale rodar aquele primeiro - a diferença entre os dois cenários é justamente o ponto central deste material.
+Este lab assume os conceitos apresentados em [`concepts.md`](../concepts.md) e a fundação de SR-MPLS em [`base.md`](../../../base.md). Se o cenário Zero-Segment ainda não foi executado, vale rodar aquele primeiro - a diferença entre os dois cenários é justamente o ponto central deste material.
 
 No Zero-Segment, o PQ-node é vizinho direto do PLR: o backup não precisa de nenhum label além do Node-SID do destino, porque "chegar ao PQ-node" é apenas "sair por essa interface física". Aqui o PQ-node está **dois saltos** do PLR - alcançável através de um vizinho, mas não sendo ele próprio vizinho. Isso muda o backup de zero labels adicionais para **um** label adicional: o Node-SID do PQ-node, empilhado abaixo do Node-SID do destino final.
 
@@ -55,7 +55,7 @@ Backup calculado: `push { prefix-SID(BA) 16007 }` abaixo do `prefix-SID(ES) 1600
 
 ![single-segment](./images/topology-single-segment.png)
 
-> A imagem acima ainda mostra MG como PQ-node - desatualizada em relação ao comportamento real medido neste lab (o IOS-XR escolheu BA). MG e BA são ambos matematicamente válidos como PQ-node; a imagem será atualizada para refletir BA.
+> **A imagem acima marca MG como PQ-node e está desatualizada.** O comportamento medido neste lab é outro: o IOS-XR escolheu BA. A prova está nas capturas dos passos 3 e 4 da verificação, que mostram `labels imposed {16007 16004}` e `Repair Node(s): 10.0.1.248`, ou seja, o prefix-SID de BA e não o de MG. MG e BA são ambos matematicamente válidos como PQ-node, então a imagem não está errada quanto à teoria, apenas quanto ao que este lab produz na prática. Corrigir em `diagrams/ti-lfa-topologies.drawio`, página do single-segment, e reexportar.
 
 O caminho SP->RJ->MG->BA é onde o label extra importa - é a parte "roteada" do backup (MG é atravessado por forwarding nativo comum, não por ser ele mesmo o alvo do label). O caminho BA->DF->ES é encaminhamento nativo, sem SID adicional: uma vez em BA, a rede já sabe levar o pacote até ES sem cruzar o link protegido.
 
@@ -88,31 +88,28 @@ SRGB `16000-23999`, sem `local-block` explícito - Adj-SIDs saem do range dinâm
 ## Deploy
 
 ```bash
-mkdir -p ~/labs/sr-mpls/cisco/ti-lfa/single-segment
-cd ~/labs/sr-mpls/cisco/ti-lfa/single-segment
+git clone https://github.com/rnpbr/LabRedes-segmentrouting.git
+cd LabRedes-segmentrouting
+
+mkdir -p ~/labs/ti-lfa/single-segment
+cp IaC/Clabs/Cisco/ti-lfa/single-segment.clab.yml ~/labs/ti-lfa/single-segment/
+cp -r Labs/Cisco/SR-MPLS/TI-LFA/single-segment/configs ~/labs/ti-lfa/single-segment/
+
+cd ~/labs/ti-lfa/single-segment
+sudo clab deploy -t single-segment.clab.yml
 ```
 
-Copiar a topologia e as configurações do repositório:
+Seis nós pedem de 10 a 12 GB de RAM.
 
-```bash
-cp IaC/Clabs/Cisco/ti-lfa/single-segment.yml lab.clab.yml
-cp -r Labs/Cisco/SR-MPLS/TI-LFA/single-segment/configs .
-```
+Acesso: `ssh clab@172.20.22.11`, senha `clab@123`. Ou `sudo docker exec -it clab-tilfa-single-segment-sp /pkg/bin/xr_cli.sh`.
 
-O YAML referencia cada arquivo `.cfg` via `startup-config`, então os seis nós já sobem configurados. **Atenção ao redeployar um lab já usado antes**: use sempre `clab destroy -t lab.clab.yml --cleanup` para limpar o diretório do lab; sem o `--cleanup`, o containerlab reaproveita a config antiga presa no diretório em vez de reaplicar do zero.
-
-```bash
-sudo clab deploy -t lab.clab.yml
-```
-
-Seis XRd control-plane consomem mais RAM que o Zero-Segment (quatro nós) - reserve ao menos 10-12 GB livres antes do deploy. Aguardar alguns minutos para todos os nós inicializarem.
-
-![alt text](image-1.png)
+![Nós do lab apos o clab deploy](./images/terminal-deploy.png)
 
 ```bash
 # Derrubar o lab
-sudo clab destroy -t lab.clab.yml --cleanup
+sudo clab destroy -t single-segment.clab.yml --cleanup
 ```
+
 
 ---
 
@@ -126,7 +123,7 @@ Em todos os seis nós:
 show ospf neighbor
 ```
 
-![alt text](image.png)
+![show ospf neighbor em SP](./images/terminal-ospf-neighbor.png)
 
 Esperado: `FULL/-` em cada interface de core. SP deve ter exatamente dois vizinhos (DF e RJ). Sem isso, o restante da verificação não faz sentido - o TI-LFA depende de uma base de dados de topologia sincronizada.
 
@@ -136,7 +133,7 @@ Esperado: `FULL/-` em cada interface de core. SP deve ter exatamente dois vizinh
 show route 10.0.1.251/32
 ```
 
-![alt text](image-2.png)
+![show route 10.0.1.251/32 em SP](./images/terminal-show-route.png)
 
 (rota para ES, a Loopback0 de destino). Esperado: next-hop primário via Gi0/0/0/0 (interface para DF), custo total 21, com uma entrada de backup marcada `Backup (TI-LFA)` via Gi0/0/0/1, `Repair Node(s): 10.0.1.248` (BA).
 
@@ -146,11 +143,19 @@ show route 10.0.1.251/32
 show cef 10.0.1.251/32 detail
 ```
 
-![alt text](image-3.png)
+![show cef 10.0.1.251/32 detail em SP](./images/terminal-show-cef.png)
 
 Esperado: uma entrada primária via Gi0/0/0/0 (para DF) marcada `protected`, e uma entrada de backup via Gi0/0/0/1 (para RJ) marcada `backup (TI-LFA)` - **não** `Local-LFA`, que é a marcação usada no Zero-Segment quando o backup é um vizinho físico direto do destino.
 
-O campo `labels imposed` na entrada de backup deve mostrar dois labels na pilha: `{16007, 16004}` - 16007 (prefix-SID de BA) no topo, 16004 (prefix-SID de ES) embaixo. `Repair Node(s): 10.0.1.248` confirma BA como o nó de reparo.
+O campo `labels imposed` na entrada de backup deve mostrar dois labels na pilha. Na execução capturada acima:
+
+```text
+via 10.10.13.2/32, GigabitEthernet0/0/0/1, ..., backup (TI-LFA)
+  next hop 10.10.13.2/32, Repair Node(s): 10.0.1.248
+  local label 16004   labels imposed {16007 16004}
+```
+
+`16007` (prefix-SID de BA) no topo e `16004` (prefix-SID de ES) embaixo. O campo `Repair Node(s)` traz um nó só, `10.0.1.248`, e é justamente aí que o double-segment vai diferir: lá a mesma linha lista dois.
 
 ### 4. Confirmar o PQ-node
 
@@ -158,18 +163,26 @@ O campo `labels imposed` na entrada de backup deve mostrar dois labels na pilha:
 show ospf routes 10.0.1.251/32 backup-path
 ```
 
-![alt text](image-4.png)
+![show ospf routes 10.0.1.251/32 backup-path em SP](./images/terminal-backup-path.png)
 
-Esperado:
+Esperado, no mesmo formato usado pelo IOS-XR no lab de node/SRLG:
 
 ```text
 O    10.0.1.251/32, metric 21
-       via 10.10.12.2, GigabitEthernet0/0/0/0, Protected
-         Backup path: TI-LFA, via 10.10.13.2, GigabitEthernet0/0/0/1
-           P node: 10.0.1.252 (RJ)   Q node: 10.0.1.248 (BA)
+       10.10.12.2, from 10.0.1.251, via GigabitEthernet0/0/0/0, path-id 1
+           Backup path: TI-LFA, Repair-List: P node: 10.0.1.248      Label: 16007
+              10.10.13.2, from 10.0.1.251, via GigabitEthernet0/0/0/1, protected bitmap ...
+              Attributes: Metric: 51, Interface Disjoint, SRLG Disjoint
 ```
 
-O campo mostra o next-hop físico do backup (RJ) e o repair node real (BA) num único print, sem precisar interpretar `labels imposed` manualmente. Esse é o print que fecha a prova do lab - o backup já está instalado na FIB antes de qualquer falha acontecer, o que é o ponto inteiro do TI-LFA (pré-computado, não reativo).
+Duas leituras que costumam ser confundidas:
+
+- `10.10.13.2` na linha de baixo é o **next-hop físico** do backup, ou seja, RJ. É por onde o pacote sai fisicamente do SP.
+- `Repair-List: P node: 10.0.1.248 / Label: 16007` é o **único segmento** empilhado, ou seja, BA.
+
+RJ não aparece na repair-list, e não deveria: ele é atravessado por encaminhamento nativo, sem que ninguém precise endereçá-lo com um label. Isso bate exatamente com o `labels imposed {16007, 16004}` do passo anterior, que tem um label de reparo só. Se a repair-list tivesse dois nós, o `show cef` mostraria três labels e o cenário seria double-segment, não single.
+
+Esse é o print que fecha a prova do lab: o backup já está instalado na FIB antes de qualquer falha acontecer, que é o ponto inteiro do TI-LFA, pré-computado e não reativo.
 
 ---
 

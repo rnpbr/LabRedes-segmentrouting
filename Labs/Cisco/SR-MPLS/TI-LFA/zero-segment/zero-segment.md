@@ -1,40 +1,18 @@
 # TI-LFA Zero-Segment
 
-## Contexto tecnológico
+## Contexto
 
-### LFA (Loop-Free Alternates)
+> Pré-requisitos: [`concepts.md`](../concepts.md) para LFA, rLFA e TI-LFA, [`base.md`](../../../base.md) para as convenções, [`setup.md`](../../../setup.md) para o ambiente.
 
-LFA é o mecanismo original de fast reroute definido no RFC 5286. A ideia é simples: o IGP já conhece a topologia inteira, então em vez de esperar reconvergir após uma falha, o roteador pré-calcula um próximo salto alternativo para cada prefixo e o instala na FIB antes de qualquer falha acontecer. Quando o link cai, a comutação é imediata.
+Primeiro lab da trilha de TI-LFA. Mostra o caso mais simples de backup: o PQ-node é vizinho direto do PLR, então o PLR não precisa empilhar nenhum label além do label do destino.
 
-A condição matemática para que um vizinho N seja LFA para um destino D, a partir do PLR P, é:
+Vale lembrar o essencial antes de seguir:
 
-```
-dist(N, D) < dist(N, P) + dist(P, D)
-```
+- **LFA** usa um vizinho como backup, desde que o caminho dele até o destino não volte pelo PLR. Nem sempre existe um vizinho assim.
+- **rLFA** alcança um nó mais distante por um túnel LDP. Cobre mais casos, mas exige LDP.
+- **TI-LFA** alcança o nó de reparo com uma pilha de labels SR. Sem LDP, sem estado nos nós do meio, e o caminho escolhido é o pós-convergência.
 
-Traduzindo: N só é alternativa válida se o caminho de N até D for mais curto do que qualquer caminho que passe por P. Isso garante que N não vai mandar o tráfego de volta para P criando um loop.
-
-O problema é que essa condição depende da topologia. Em redes com poucos caminhos alternativos ou topologias em anel, muitos prefixos simplesmente não têm nenhum vizinho que satisfaça a condição. A cobertura do LFA pode ficar bem abaixo de 100% dependendo de como a rede está desenhada, o que torna a proteção imprevisível e difícil de garantir em produção.
-
-### rLFA (Remote LFA)
-
-O rLFA, definido no RFC 7490, foi criado para resolver a cobertura incompleta do LFA. A observação é que às vezes não existe vizinho direto que satisfaça a condição de loop-free, mas existe um node mais distante na rede que satisfaz - só que o PLR não consegue alcançá-lo diretamente para usá-lo como próximo salto de backup.
-
-A solução do rLFA é criar um túnel LDP até esse node remoto, chamado PQ-node, e encaminhar o tráfego de backup por dentro do túnel. O PQ-node precisa satisfazer duas condições: o PLR consegue alcançá-lo sem cruzar o link protegido (P-space), e ele consegue alcançar o destino sem cruzar o link protegido (Q-space). Com isso, a cobertura aumenta significativamente.
-
-O problema do rLFA está na dependência do LDP. Para criar o túnel até o PQ-node, o LDP precisa estar rodando em toda a rede, o que significa sinalização adicional, tabelas de estado em cada node intermediário e uma pilha de protocolo paralela ao IGP. Em redes que já usam SR-MPLS e querem eliminar o LDP exatamente para reduzir complexidade operacional, o rLFA é uma contradição: resolve um problema criando outro.
-
-Além disso, o rLFA ainda tem limitações de cobertura em topologias onde P-space e Q-space não se intersectam em nenhum node, o que continua deixando prefixos desprotegidos.
-
-### TI-LFA (Topology Independent LFA)
-
-O TI-LFA, definido no RFC 8102, parte do mesmo conceito de P-space e Q-space do rLFA, mas elimina a dependência do LDP e garante cobertura de 100% em qualquer topologia.
-
-Em vez de criar um túnel separado para chegar ao PQ-node, o PLR usa Segment Routing para expressar o caminho de backup diretamente como uma SID-list empilhada no pacote. Os roteadores intermediários não precisam de nenhum estado adicional: eles simplesmente leem o label do topo da pilha e encaminham normalmente.
-
-Quando P-space e Q-space se intersectam em um vizinho direto do PLR, o backup é expresso com um único label - o Node-SID do destino. Isso é o Zero-Segment. Quando a interseção existe mas não em um vizinho direto, o PLR empilha o Node-SID do PQ-node antes do Node-SID do destino. Isso é o Single-Segment. Quando P-space e Q-space não se intersectam em nenhum node, o PLR usa um Adjacency-SID para conectar os dois espaços. Isso é o Double-Segment. Em todos os casos, o backup é calculado e instalado antes da falha, e o caminho expresso é exatamente o que a rede usaria após a convergência do IGP - loop-free por construção.
-
----
+O número de labels extras define o cenário: zero, single ou double-segment. Este lab é o zero.
 
 ## Este lab
 
@@ -59,7 +37,7 @@ A interseção é {MG, BA}. O TI-LFA elege MG porque é vizinho direto do SP e t
 
 ## Topologia
 
-![Zero Segment](./images/topology-zerosegment.png)
+![Topologia zero-segment](./images/topology-zero-segment.png)
 
 MG é vizinho direto de SP e alcança DF sem cruzar SP-DF, portanto MG é PQ-node. O caminho de backup em verde é SP -> MG -> DF com label `{ 16002 }` imposta pelo SP. O link SP-DF em vermelho tracejado é o link protegido.
 
@@ -89,29 +67,26 @@ O label de cada node é calculado como base do SRGB + SID index. Com SRGB 16000-
 ## Deploy
 
 ```bash
-mkdir -p ~/labs/sr-mpls/cisco/ti-lfa/zero-segment
-cd ~/labs/sr-mpls/cisco/ti-lfa/zero-segment
+git clone https://github.com/rnpbr/LabRedes-segmentrouting.git
+cd LabRedes-segmentrouting
+
+mkdir -p ~/labs/ti-lfa/zero-segment
+cp IaC/Clabs/Cisco/ti-lfa/zero-segment.clab.yml ~/labs/ti-lfa/zero-segment/
+cp -r Labs/Cisco/SR-MPLS/TI-LFA/zero-segment/configs ~/labs/ti-lfa/zero-segment/
+
+cd ~/labs/ti-lfa/zero-segment
+sudo clab deploy -t zero-segment.clab.yml
 ```
 
-Copiar o arquivo de topologia e as configurações do repositório:
+Quatro nós pedem cerca de 6 GB de RAM. O boot leva uns 5 minutos.
 
-```bash
-cp IaC/Clabs/Cisco/ti-lfa/zero-segment.yml lab.clab.yml
-cp -r Labs/Cisco/SR-MPLS/TI-LFA/zero-segment/configs .
-```
-
-O arquivo `zero-segment.yml` define os nós, imagem, endereços de gerência e mapeamento de interfaces, e referencia cada `.cfg` via `startup-config` - os nós já sobem configurados.
-
-```bash
-sudo clab deploy -t lab.clab.yml
-```
-
-Aguardar cerca de 5 minutos para o XRd inicializar. Acesso via `ssh clab@<IP>` com senha `clab@123`.
+Acesso: `ssh clab@172.20.21.11`, senha `clab@123`. Ou `sudo docker exec -it clab-tilfa-zero-segment-sp /pkg/bin/xr_cli.sh`.
 
 ```bash
 # Derrubar o lab
-sudo clab destroy -t lab.clab.yml
+sudo clab destroy -t zero-segment.clab.yml --cleanup
 ```
+
 
 ---
 
@@ -125,12 +100,14 @@ configs/
 └── ba.cfg
 ```
 
-Aplicadas automaticamente no boot via `startup-config` no `.clab.yml`. Para revisar ou reaplicar manualmente:
+Cada arquivo é um startup-config completo de IOS-XR, com o bloco base do containerlab junto. Ver [`setup.md`](../../../setup.md).
 
-SP: `ssh clab@172.20.21.11` -> `configs/sp.cfg`
-DF: `ssh clab@172.20.21.12` -> `configs/df.cfg`
-MG: `ssh clab@172.20.21.15` -> `configs/mg.cfg`
-BA: `ssh clab@172.20.21.17` -> `configs/ba.cfg`
+| Nó | Mgmt | Config |
+|---|---|---|
+| SP | `172.20.21.11` | `configs/sp.cfg` |
+| DF | `172.20.21.12` | `configs/df.cfg` |
+| MG | `172.20.21.15` | `configs/mg.cfg` |
+| BA | `172.20.21.17` | `configs/ba.cfg` |
 
 ---
 
@@ -142,7 +119,7 @@ BA: `ssh clab@172.20.21.17` -> `configs/ba.cfg`
 show ospf neighbor
 ```
 
-![OSPF Neighbors](./images/terminal-test_ospf.png)
+![show ospf neighbor em SP](./images/terminal-ospf-neighbor.png)
 
 O OSPF precisa ter adjacência com todos os vizinhos antes de qualquer coisa funcionar. Sem vizinhanças em estado FULL, o roteador não tem visibilidade completa da topologia e o TI-LFA não consegue calcular os backups.
 
@@ -158,7 +135,7 @@ O campo `Dead Time` conta regressivamente. Se chegar a zero sem receber um Hello
 show ospf segment-routing adjacency-sids
 ```
 
-![OSPF Adjacency SIDs](./images/terminal-test_osfpadj.png)
+![show ospf segment-routing adjacency-sids em SP](./images/terminal-adjacency-sids.png)
 
 Este comando mostra os Adjacency-SIDs alocados dinamicamente pelo OSPF para cada enlace do SP e confirma que o TI-LFA calculou e instalou o backup para cada adjacência.
 
@@ -184,7 +161,7 @@ O CEF (Cisco Express Forwarding) é a tabela de encaminhamento de alta velocidad
 show cef 10.0.1.253/32 detail
 ```
 
-![CEF Detail](./images/terminal-test_cef.png)
+![show cef 10.0.1.253/32 detail em SP](./images/terminal-show-cef.png)
 
 `10.0.1.253/32, labeled SR` confirma que a entrada é para o prefixo do DF tratado como SR.
 
@@ -216,7 +193,7 @@ Verificar o caminho após a falha:
 traceroute 10.0.1.253 source 10.0.1.254
 ```
 
-![Traceroute apos falha](./images/terminal-test_traceroute.png)
+![traceroute para DF apos a falha](./images/terminal-traceroute.png)
 
 O traceroute mostra o caminho real dos pacotes após a falha. Cada linha é um salto na rede.
 

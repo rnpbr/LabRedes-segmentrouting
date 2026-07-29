@@ -1,56 +1,78 @@
-> Uso interno - material em desenvolvimento.
+> Uso interno, material em desenvolvimento.
 
-# LabRedes - Segment Routing
+# Segment Routing sobre Cisco IOS-XR
 
-Parte do projeto **LabRedes**: laboratórios práticos de Segment Routing, com cenários próximos de rede real (temática Rede Ipê) rodando sobre Containerlab + Cisco XRd.
-
-Segment Routing simplifica redes MPLS eliminando protocolos de sinalização como RSVP-TE e LDP: o caminho vai codificado no próprio pacote como uma pilha de labels, a rede fica stateless e o headend é o único ponto de controle do tráfego.
+Laboratórios de Segment Routing rodando em Containerlab com Cisco XRd. Os cenários usam a temática da Rede Ipê.
 
 ## Por onde começar
 
+1. [`base.md`](./base.md) - conceitos e convenções.
+2. [`setup.md`](./setup.md) - Docker, Containerlab, imagem XRd.
+3. TI-LFA, nesta ordem: zero-segment, single-segment, double-segment, node-srlg-protection, microloop-avoidance.
+4. SR-TE: explicit-policy. Independente da trilha de TI-LFA.
 
-1. [`Docs/Cisco Labs/roadmap.md`](./Docs/roadmap.md) - todo cenário clássico de SR no escopo do projeto, com status e ordem sugerida.
-2. [`Docs/Cisco Labs/base.md`](./Docs/base.md) - conceitos, convenções do projeto, topologia de referência.
-3. [`Docs/Cisco Labs/setup.md`](./Docs/setup.md) - Docker, Containerlab, imagem XRd, problemas comuns.
- 
+Índice completo de cenários, com status: [`roadmap.md`](./roadmap.md).
 
 ## Estrutura
 
 ```text
 LabRedes-segmentrouting/
-├── Docs/Cisco Labs/
-│   ├── base.md            # conceitos e convenções (pré-requisito de todo lab)
-│   ├── setup.md           # ambiente: Docker, Containerlab, imagem XRd
-│   └── roadmap.md         # índice de cenários, status, ordem sugerida
+├── Docs/References/          # material de referência externo
 │
-├── Labs/
-│   └── Cisco/
-│       └── SR-MPLS/
-│           ├── TI-LFA/     # zero/single/double-segment, node+SRLG
-│           └── SR-TE/      # explicit-policy
+├── Labs/Cisco/
+│   ├── base.md               # conceitos e convenções
+│   ├── setup.md              # ambiente
+│   ├── roadmap.md            # índice de cenários
+│   ├── cisco-sr.md           # este arquivo
+│   └── SR-MPLS/
+│       ├── TI-LFA/           # concepts.md + 5 labs
+│       └── SR-TE/            # concepts.md + explicit-policy
 │
-└── IaC/
-    └── Clabs/
-        └── Cisco/          # topologias containerlab (.yml), uma pasta por categoria
+└── IaC/Clabs/Cisco/
+    ├── ti-lfa/               # topologias containerlab
+    └── sr-te/
 ```
 
-Cada lab fica em `Labs/Cisco/SR-MPLS/<categoria>/<lab>/`, com o markdown do lab, `configs/*.cfg` por nó e `images/` quando houver capturas. O `.clab.yml` correspondente fica em `IaC/Clabs/Cisco/<categoria>/<lab>.yml` e é copiado para a pasta de deploy - ver `Docs/setup.md` para o fluxo padrão.
+Cada lab fica em `Labs/Cisco/SR-MPLS/<categoria>/<lab>/`, com o markdown, `configs/*.cfg` por nó e `images/`. A topologia correspondente fica em `IaC/Clabs/Cisco/<categoria>/<lab>.clab.yml`.
 
-## Labs disponíveis
+## Subir um lab
 
-### Cisco IOS-XR
+```bash
+git clone https://github.com/rnpbr/LabRedes-segmentrouting.git
+cd LabRedes-segmentrouting
 
-| Lab | Categoria | Descrição |
-|---|---|---|
-| [zero-segment](./Labs/Cisco/SR-MPLS/TI-LFA/zero-segment/zero-segment.md) | TI-LFA | PQ-node vizinho direto do PLR |
-| [single-segment](./Labs/Cisco/SR-MPLS/TI-LFA/single-segment/single-segment.md) | TI-LFA | PQ-node via Ext P-space, um segmento extra |
-| [double-segment](./Labs/Cisco/SR-MPLS/TI-LFA/double-segment/double-segment.md) | TI-LFA | P-space e Q-space disjuntos, Adj-SID como ponte |
-| [node-srlg-protection](./Labs/Cisco/SR-MPLS/TI-LFA/node-srlg-protection/node-srlg-protection.md) | TI-LFA | Tiebreakers de proteção de nó e SRLG |
-| [explicit-policy](./Labs/Cisco/SR-MPLS/SR-TE/explicit-policy/explicit-policy.md) | SR-TE | Segment list estática forçando caminho de menor latência |
+mkdir -p ~/labs/<categoria>/<lab>
+cp IaC/Clabs/Cisco/<categoria>/<lab>.clab.yml ~/labs/<categoria>/<lab>/
+cp -r Labs/Cisco/SR-MPLS/<CATEGORIA>/<lab>/configs ~/labs/<categoria>/<lab>/
 
-Todo cenário clássico de SR fora desta lista (Flex-Algo, SRv6, multi-domínio, ODN, etc.) está listado com status em `Docs/Cisco Labs/roadmap.md`, concluído ou não.
+cd ~/labs/<categoria>/<lab>
+sudo clab deploy -t <lab>.clab.yml
+```
 
+`<categoria>` é `ti-lfa` ou `sr-te`. `<CATEGORIA>` é `TI-LFA` ou `SR-TE`. Os nós já sobem configurados. Detalhes, deploy direto do GitHub e problemas comuns em [`setup.md`](./setup.md).
 
-### Multi-domínio / Inter-domínio
+## Labs
 
-Em desenvolvimento 
+### TI-LFA
+
+| Lab | O que mostra | Nós |
+|---|---|---:|
+| [zero-segment](./SR-MPLS/TI-LFA/zero-segment/zero-segment.md) | PQ-node vizinho direto do PLR, nenhum label extra | 4 |
+| [single-segment](./SR-MPLS/TI-LFA/single-segment/single-segment.md) | PQ-node no P-space estendido, um label extra | 6 |
+| [double-segment](./SR-MPLS/TI-LFA/double-segment/double-segment.md) | P-space e Q-space disjuntos, Adj-SID como ponte | 6 |
+| [node-srlg-protection](./SR-MPLS/TI-LFA/node-srlg-protection/node-srlg-protection.md) | Tiebreakers de proteção de nó e de SRLG | 6 |
+| [microloop-avoidance](./SR-MPLS/TI-LFA/microloop-avoidance/microloop-avoidance.md) | SID-list temporária durante a reconvergência | 6 |
+
+Conceitos: [`SR-MPLS/TI-LFA/concepts.md`](./SR-MPLS/TI-LFA/concepts.md).
+
+### SR-TE
+
+| Lab | O que mostra | Nós |
+|---|---|---:|
+| [explicit-policy](./SR-MPLS/SR-TE/explicit-policy/explicit-policy.md) | Segment list estática forçando o caminho de menor latência | 5 |
+
+Conceitos: [`SR-MPLS/SR-TE/concepts.md`](./SR-MPLS/SR-TE/concepts.md).
+
+### Multi-domínio
+
+Em desenvolvimento em branch separada, por outra pessoa. Ver [`roadmap.md`](./roadmap.md).

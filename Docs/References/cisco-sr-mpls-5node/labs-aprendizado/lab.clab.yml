@@ -7,7 +7,7 @@ mgmt:
 topology:
   kinds:
     cisco_xrd:
-      image: xrd-control-plane:7.10.2
+      image: ios-xr/xrd-control-plane:7.10.2
 
   nodes:
     pe1:

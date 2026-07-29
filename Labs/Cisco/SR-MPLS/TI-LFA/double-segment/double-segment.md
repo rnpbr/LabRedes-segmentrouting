@@ -77,19 +77,28 @@ O mgmt subnet muda para `172.20.23.0/24` para permitir rodar este lab em paralel
 ## Deploy
 
 ```bash
-mkdir -p ~/labs/sr-mpls/cisco/ti-lfa/double-segment
-cd ~/labs/sr-mpls/cisco/ti-lfa/double-segment
-cp IaC/Clabs/Cisco/ti-lfa/double-segment.yml lab.clab.yml
-cp -r Labs/Cisco/SR-MPLS/TI-LFA/double-segment/configs .
-sudo clab deploy -t lab.clab.yml
+git clone https://github.com/rnpbr/LabRedes-segmentrouting.git
+cd LabRedes-segmentrouting
+
+mkdir -p ~/labs/ti-lfa/double-segment
+cp IaC/Clabs/Cisco/ti-lfa/double-segment.clab.yml ~/labs/ti-lfa/double-segment/
+cp -r Labs/Cisco/SR-MPLS/TI-LFA/double-segment/configs ~/labs/ti-lfa/double-segment/
+
+cd ~/labs/ti-lfa/double-segment
+sudo clab deploy -t double-segment.clab.yml
 ```
 
-![alt text](image.png)
+Seis nós, de 10 a 12 GB de RAM. A rede de gerência é `172.20.23.0/24`, diferente da do single-segment, então os dois labs rodam juntos no mesmo host.
+
+Acesso: `ssh clab@172.20.23.11`, senha `clab@123`. Ou `sudo docker exec -it clab-tilfa-double-segment-sp /pkg/bin/xr_cli.sh`.
+
+![Nós do lab apos o clab deploy](./images/terminal-deploy.png)
 
 ```bash
 # Derrubar o lab
-sudo clab destroy -t lab.clab.yml --cleanup
+sudo clab destroy -t double-segment.clab.yml --cleanup
 ```
+
 
 ---
 
@@ -101,7 +110,7 @@ sudo clab destroy -t lab.clab.yml --cleanup
 ```
 show ospf neighbor
 ```
-![alt text](image-1.png)
+![show ospf neighbor em SP](./images/terminal-ospf-neighbor.png)
 
 Igual ao single-segment - seis nós, todas as adjacências `FULL/-`. A interface MG-BA continua formando adjacência normalmente; custo alto não impede a adjacência OSPF, apenas torna o enlace pouco atrativo para SPF.
 
@@ -113,7 +122,7 @@ Em MG:
 show ospf interface GigabitEthernet0/0/0/1
 ```
 
-![alt text](image-2.png)
+![show ospf interface Gi0/0/0/1 em MG, Cost 1000](./images/terminal-ospf-interface.png)
 
 (ajustar o número da interface conforme o `.cfg`). Esperado: `Cost: 1000`.
 
@@ -124,10 +133,20 @@ show ospf interface GigabitEthernet0/0/0/1
 ```
 show cef 10.0.1.251/32 detail
 ```
-![alt text](image-3.png)
+![show cef 10.0.1.251/32 detail em SP](./images/terminal-show-cef.png)
 
 
-O campo `labels imposed` na entrada de backup deve mostrar **três** labels: `{16005, 24XXX, 16004}` - 16005 (prefix-SID de MG) no topo, um Adjacency-SID dinâmico (faixa acima de 24000, já que este projeto não configura `local-block` separado) representando o enlace MG->BA no meio, e 16004 (prefix-SID de ES) embaixo.
+O campo `labels imposed` na entrada de backup deve mostrar **três** labels. Na execução capturada acima:
+
+```text
+via 10.10.13.2/32, GigabitEthernet0/0/0/1, ..., backup (TI-LFA)
+  next hop 10.10.13.2/32, Repair Node(s): 10.0.1.250, 10.0.1.248
+  local label 16004   labels imposed {16005 24002 16004}
+```
+
+`16005` é o prefix-SID de MG, `24002` é um Adjacency-SID dinâmico representando o enlace MG para BA, e `16004` é o prefix-SID de ES. O Adj-SID sai da faixa acima de `24000` porque este projeto não configura `local-block` separado, então o valor exato pode variar entre execuções.
+
+Repare no campo `Repair Node(s)`: aqui ele lista **dois** nós, `10.0.1.250` (MG) e `10.0.1.248` (BA). É a diferença mais direta em relação ao single-segment, onde a mesma linha traz um nó só.
 
 **Em MG**, para identificar exatamente qual Adjacency-SID é esse:
 
@@ -135,8 +154,15 @@ O campo `labels imposed` na entrada de backup deve mostrar **três** labels: `{1
 show ospf segment-routing adjacency-sids
 ```
 
-![alt text](image-4.png)
-Esperado: uma linha com `Neighbor ID 10.0.1.248` (BA) e `Interface Gi0/0/0/1` - o número na coluna `Adj SID` dessa linha é o mesmo `24XXX` que apareceu no meio da pilha do `show cef` de SP. Normalmente aparecem duas entradas para o mesmo vizinho (uma `U` desprotegida, uma `P B` protegida com backup) - qualquer uma das duas pode ser a usada, dependendo de qual o backup do próprio MG está usando no momento.
+![show ospf segment-routing adjacency-sids em MG](./images/terminal-adjacency-sids.png)
+Esperado: linhas com `Neighbor ID 10.0.1.248` (BA) na `Interface Gi0/0/0/1`. Na captura acima:
+
+```text
+24002  10.0.1.248  10.10.57.2  Gi0/0/0/1  D U N
+24003  10.0.1.248  10.10.57.2  Gi0/0/0/1  D P B  10.10.35.1  Gi0/0/0/0
+```
+
+Aparecem duas entradas para o mesmo vizinho, uma desprotegida (`U N`) e uma protegida com backup (`P B`). O `24002` da primeira linha é exatamente o label do meio da pilha vista no `show cef` de SP, o que fecha a prova: o segmento do meio do backup é a adjacência MG para BA, e não um caminho calculado por custo.
 
 ### 4. Diferença de comportamento vs. single-segment
 
@@ -144,7 +170,8 @@ Compare com o `show cef` do single-segment (rodado em SP também, lá):
 
 | | single-segment | double-segment |
 |---|---|---|
-| Labels impostos | `{16007, 16004}` (2) | `{16005, adj-SID, 16004}` (3) |
+| Labels impostos | `{16007, 16004}` (2) | `{16005, 24002, 16004}` (3) |
+| `Repair Node(s)` | `10.0.1.248` (só BA) | `10.0.1.250, 10.0.1.248` (MG e BA) |
 | Nó intermediário participa como | PQ-node (P∩Q) | P-node apenas, precisa do Adj-SID pra alcançar o Q-node |
 | Enlace até o Q-node | usado por custo (parte do caminho nativo) | usado por Adj-SID (custo do enlace irrelevante) |
 
@@ -152,4 +179,10 @@ Compare com o `show cef` do single-segment (rodado em SP também, lá):
 
 ## Quando isso acontece na prática
 
-Em produção, um custo de 1000 artificial não é o gatilho real - a situação double-segment aparece organicamente em topologias com poucos caminhos alternativos entre certas regiões da rede (redes em anel, topologias regionais com poucos backbones de trânsito, ou depois que um terceiro
+Em produção, um custo de 1000 artificial não é o gatilho real. A situação double-segment aparece organicamente em topologias com poucos caminhos alternativos entre certas regiões da rede: anéis metropolitanos, redes regionais com poucos backbones de trânsito, ou domínios onde uma falha anterior já consumiu o caminho alternativo mais óbvio e sobrou apenas uma rota cara.
+
+O padrão comum a esses casos é sempre o mesmo. O caminho de reparo existe fisicamente, mas o custo IGP de algum trecho dele é alto o suficiente para que nenhum nó o escolha por SPF. Sem o Adj-SID, o TI-LFA não teria como costurar P-space e Q-space, porque tudo o que o prefix-SID sabe dizer é "vá pelo caminho mais curto", e o caminho mais curto é justamente o que não serve.
+
+Vale notar também que o custo alto não é o único gatilho possível. Afinidades de link, restrições de Flex-Algo e enlaces com atributos administrativos que os excluam do SPF produzem o mesmo efeito: um enlace que existe, forma adjacência e encaminha normalmente, mas que o cálculo de caminho mais curto nunca elege. O Adj-SID é o que dá acesso a ele.
+
+O próximo cenário da trilha, [`node-srlg-protection`](../node-srlg-protection/node-srlg-protection.md), muda a pergunta: em vez de "como alcançar o Q-space", passa a ser "entre vários backups válidos, qual deles protege de verdade".
