@@ -110,18 +110,7 @@ O `--cleanup` apaga o diretório do lab. Sem ele, a config gravada pelo XRd fica
 
 > Os `.clab.yml` trazem `enforce-startup-config: true`, então todo deploy reaplica o `.cfg`. Se você quiser preservar mudanças feitas à mão entre um deploy e outro, remova essa linha.
 
-## Servir os configs direto do GitHub
 
-O containerlab também aceita URL no lugar do caminho local em `startup-config`, baixando o arquivo antes de subir o nó. Isso elimina o passo de copiar `configs/`:
-
-```yaml
-    sp:
-      startup-config: https://raw.githubusercontent.com/rnpbr/LabRedes-segmentrouting/main/Labs/Cisco/SR-MPLS/TI-LFA/zero-segment/configs/sp.cfg
-```
-
-Os `.clab.yml` deste repositório usam caminho local (`configs/sp.cfg`) por padrão, que é o testado e documentado nas seções de Deploy. Para usar URL direta, edite o `startup-config` de cada nó no `.clab.yml` antes do deploy.
-
-Documentação: <https://containerlab.dev/manual/config-mgmt/#remote>
 
 ## Formato dos arquivos `.cfg`
 
