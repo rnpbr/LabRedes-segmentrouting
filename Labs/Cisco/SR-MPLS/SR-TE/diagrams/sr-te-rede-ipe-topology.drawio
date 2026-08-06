@@ -1,0 +1,106 @@
+<mxfile host="app.diagrams.net">
+  <diagram id="nPM3OjytcbwOLbf2g-2E" name="Página-1">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="ufc" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAECE7;strokeColor=#993C1D;strokeWidth=1;fontColor=#4A1B0C;fontSize=15;arcSize=12;" value="&lt;b&gt;UFC&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;color: rgb(113, 43, 19);&quot;&gt;CE · instituição&lt;/font&gt;" vertex="1">
+          <mxGeometry height="60" width="130" x="-40" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="mdWyr-i-mFFENpLEYjgh-1" edge="1" parent="1" source="pop-ce" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontSize=15;" target="srgb">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pop-ce" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EEEDFE;strokeColor=#534AB7;strokeWidth=2;fontColor=#26215C;fontSize=15;arcSize=10;" value="&lt;b&gt;PoP-CE&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;color: rgb(60, 52, 137);&quot;&gt;headend · SID: 100&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;color: rgb(83, 74, 183);&quot;&gt;Fortaleza · SR-TE policy&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="170" x="240" y="179" as="geometry" />
+        </mxCell>
+        <mxCell id="pop-sp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F1EFE8;strokeColor=#888780;strokeWidth=1;fontColor=#2C2C2A;fontSize=15;arcSize=10;" value="&lt;b&gt;PoP-SP&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;color: rgb(95, 94, 90);&quot;&gt;hub central · SID: 200&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;color: rgb(68, 68, 65);&quot;&gt;São Paulo · IGP best-path&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="170" x="620" y="504" as="geometry" />
+        </mxCell>
+        <mxCell id="pop-pe" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5EE;strokeColor=#1D9E75;strokeWidth=1.5;fontColor=#04342C;fontSize=15;arcSize=10;" value="&lt;b&gt;PoP-BA&lt;br&gt;&lt;/b&gt;&lt;font style=&quot;color: rgb(8, 80, 65);&quot;&gt;waypoint 1 · SID: 300&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="170" x="360" y="-100" as="geometry" />
+        </mxCell>
+        <mxCell id="pop-ba" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5EE;strokeColor=#1D9E75;strokeWidth=1.5;fontColor=#04342C;fontSize=15;arcSize=10;" value="&lt;b&gt;PoP-MG&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;color: rgb(8, 80, 65);&quot;&gt;waypoint 2 · SID: 350&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="170" x="870" y="-100" as="geometry" />
+        </mxCell>
+        <mxCell id="pop-rj" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EEEDFE;strokeColor=#534AB7;strokeWidth=2;fontColor=#26215C;fontSize=15;arcSize=10;" value="&lt;b&gt;PoP-RJ&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;color: rgb(60, 52, 137);&quot;&gt;egress · SID: 400&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;color: rgb(83, 74, 183);&quot;&gt;Rio de Janeiro · destino SR-TE&lt;/font&gt;" vertex="1">
+          <mxGeometry height="80" width="170" x="1040" y="179" as="geometry" />
+        </mxCell>
+        <mxCell id="ufrj" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAECE7;strokeColor=#993C1D;strokeWidth=1;fontColor=#4A1B0C;fontSize=15;arcSize=12;" value="&lt;b&gt;UFRJ&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;color: rgb(113, 43, 19);&quot;&gt;RJ · instituição&lt;/font&gt;" vertex="1">
+          <mxGeometry height="50" width="220" x="1330" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="l-ufc-ce" edge="1" parent="1" source="ufc" style="endArrow=none;strokeColor=#888780;strokeWidth=2;html=1;fontSize=15;" target="pop-ce" value="&lt;font style=&quot;color: rgb(95, 94, 90);&quot;&gt;acesso&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l-ce-sp" edge="1" parent="1" source="pop-ce" style="endArrow=none;strokeColor=#BD7000;strokeWidth=2;dashed=1;dashPattern=10 5;html=1;fontSize=15;fillColor=#f0a30a;" target="pop-sp" value="&lt;font style=&quot;color: rgb(153, 60, 29);&quot;&gt;delay ~30ms&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l-sp-rj" edge="1" parent="1" source="pop-sp" style="endArrow=none;strokeColor=#BD7000;strokeWidth=2;dashed=1;dashPattern=10 5;html=1;fontSize=15;fillColor=#f0a30a;" target="pop-rj" value="&lt;font style=&quot;color: rgb(153, 60, 29);&quot;&gt;delay ~10ms&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l-ce-pe" edge="1" parent="1" source="pop-ce" style="endArrow=none;strokeColor=#1D9E75;strokeWidth=3;html=1;fontSize=15;" target="pop-pe" value="&lt;font style=&quot;color: rgb(8, 80, 65);&quot;&gt;delay ~8ms&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l-pe-ba" edge="1" parent="1" source="pop-pe" style="endArrow=none;strokeColor=#1D9E75;strokeWidth=3;html=1;fontSize=15;" target="pop-ba" value="&lt;font style=&quot;color: rgb(8, 80, 65);&quot;&gt;delay ~8ms&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l-ba-rj" edge="1" parent="1" source="pop-ba" style="endArrow=none;strokeColor=#1D9E75;strokeWidth=3;html=1;fontSize=15;" target="pop-rj" value="&lt;font style=&quot;color: rgb(8, 80, 65);&quot;&gt;delay ~10ms&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="l-rj-ufrj" edge="1" parent="1" source="pop-rj" style="endArrow=none;strokeColor=#888780;strokeWidth=2;html=1;fontSize=15;" target="ufrj" value="&lt;font style=&quot;color: rgb(95, 94, 90);&quot;&gt;acesso&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="igp-box" parent="1" style="text;html=1;strokeColor=#B09500;fillColor=#e3c800;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=15;strokeWidth=0.5;fontColor=#000000;" value="&lt;font&gt;&lt;b style=&quot;color: rgb(113, 43, 19);&quot;&gt;IGP best-path&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;color: rgb(153, 60, 29);&quot;&gt;CE -> SP -> RJ&lt;br&gt;delay total: ~40ms&lt;br&gt;best-effort, SSH, downloads&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="70" width="217" x="607.5" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="srte-box" parent="1" style="text;html=1;strokeColor=#1D9E75;fillColor=#E1F5EE;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=15;strokeWidth=0.5;" value="&lt;font&gt;&lt;b style=&quot;color: rgb(8, 80, 65);&quot;&gt;SR-TE path&lt;/b&gt;&lt;br&gt;&lt;font style=&quot;color: rgb(15, 110, 86);&quot;&gt;CE -> BA -> MG -> RJ&lt;br&gt;delay total: ~26ms&lt;br&gt;DSCP EF (vídeo / voip)&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="90" width="228" x="602" y="-30" as="geometry" />
+        </mxCell>
+        <mxCell id="mdWyr-i-mFFENpLEYjgh-2" edge="1" parent="1" source="srgb" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=15;" target="pop-rj">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="srgb" parent="1" style="text;html=1;strokeColor=#534AB7;fillColor=#EEEDFE;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=1;fontSize=15;fontColor=#26215C;strokeWidth=0.5;" value="&lt;font&gt;&lt;b&gt;SRGB: 16000–23999&lt;/b&gt;&lt;br&gt;&lt;font&gt;CE=100  SP=200  PE=300  BA=350  RJ=400&lt;/font&gt;&lt;/font&gt;" vertex="1">
+          <mxGeometry height="79" width="266" x="594" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-box" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#888780;strokeWidth=0.5;dashed=1;dashPattern=6 3;fontSize=15;" value="" vertex="1">
+          <mxGeometry height="190" width="740" x="350" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-igp-line" edge="1" parent="1" style="endArrow=none;strokeColor=#BD7000;strokeWidth=2;dashed=1;dashPattern=10 5;fontSize=15;fillColor=#f0a30a;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="371" y="678" as="sourcePoint" />
+            <mxPoint x="431" y="678" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="leg-igp-text" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=15;fontColor=#2C2C2A;" value="IGP best-path (CE->SP->RJ) · delay ~40ms · best-effort&amp;nbsp;" vertex="1">
+          <mxGeometry height="20" width="360" x="440" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-srte-line" edge="1" parent="1" style="endArrow=none;strokeColor=#1D9E75;strokeWidth=3;fontSize=15;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="371" y="710" as="sourcePoint" />
+            <mxPoint x="431" y="710" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="leg-srte-text" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=15;fontColor=#2C2C2A;" value="SR-TE path (CE->BA->MG->RJ) · delay ~26ms (ideal para vídeo/VoIP)" vertex="1">
+          <mxGeometry height="20" width="400" x="440" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-acc-line" edge="1" parent="1" style="endArrow=none;strokeColor=#432D57;strokeWidth=2;fontSize=15;fillColor=#76608a;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="371" y="742" as="sourcePoint" />
+            <mxPoint x="431" y="742" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="leg-acc-text" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=15;fontColor=#2C2C2A;" value="Link de acesso (CE/RJ ↔ instituição)" vertex="1">
+          <mxGeometry height="20" width="360" x="440" y="730" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-pop-rnp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EEEDFE;strokeColor=#534AB7;strokeWidth=1.5;fontSize=15;fontColor=#26215C;" value="PoP headend / egress (RNP)" vertex="1">
+          <mxGeometry height="50" width="190" x="360" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-pop-srte" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E1F5EE;strokeColor=#1D9E75;strokeWidth=1.5;fontSize=15;fontColor=#04342C;" value="PoP waypoint SR-TE" vertex="1">
+          <mxGeometry height="50" width="190" x="580" y="770" as="geometry" />
+        </mxCell>
+        <mxCell id="leg-inst" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAECE7;strokeColor=#993C1D;strokeWidth=1;fontSize=15;fontColor=#4A1B0C;arcSize=50;" value="Instituição (CPE)" vertex="1">
+          <mxGeometry height="40" width="210" x="810" y="770" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
