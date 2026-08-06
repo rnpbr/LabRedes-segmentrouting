@@ -1,4 +1,4 @@
-# TI-LFA Node and SRLG Protection
+# TI-LFA Node and SRLG (Shared Risk Link Group) Protection
 
 ## Contexto
 
