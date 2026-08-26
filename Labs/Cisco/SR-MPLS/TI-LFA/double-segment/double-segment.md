@@ -2,29 +2,31 @@
 
 ## Contexto
 
-Continuação direta do [single-segment](../single-segment/single-segment.md) - mesma rede, mesmos seis PoPs, mesmo PLR (SP) protegendo o mesmo link (SP-DF) para o mesmo destino final (ES). A única mudança é um único parâmetro: o custo do enlace MG-BA sobe de `10` para `1000`.
+Continuação direta do [single-segment](../single-segment/single-segment.md): mesma rede, mesmos seis PoPs, mesmo PLR (SP) protegendo o mesmo link (SP-DF) para o mesmo destino final (ES). A única mudança é um único parâmetro: o custo do enlace MG-BA sobe de `10` para `1000`.
 
-Essa mudança é suficiente para quebrar a interseção entre P-space e Q-space que existia no single-segment. Quando isso acontece, não existe mais um único PQ-node - o backup precisa "costurar" um nó do P-space a um nó do Q-space usando um enlace explícito entre os dois, endereçado por um **Adjacency-SID**. Dois labels adicionais em vez de um: por isso *double*-segment.
+Essa mudança é suficiente para quebrar a interseção entre P-space e Q-space que existia no single-segment. Quando isso acontece, não existe mais um único PQ-node. O backup precisa "costurar" um nó do P-space a um nó do Q-space usando um enlace explícito entre os dois, endereçado por um **Adjacency-SID**. Dois labels adicionais em vez de um: por isso *double*-segment.
 
 ---
 
 ## Este lab
 
-Mesma topologia física do single-segment - anel SP-RJ-MG-BA-DF-SP com o pendant ES atrás de DF. Muda só um número: o enlace MG-BA sobe de custo 10 para **1000**. Todos os demais enlaces, incluindo o link protegido SP-DF, seguem custo 10.
+Mesma topologia física do single-segment. SP tem dois links, um direto para DF (o protegido) e um para RJ. A partir de RJ existe um caminho de volta até DF passando por MG e BA. ES está pendurado atrás de DF, com um único link. Adjacências: `SP<->DF` (protegido), `SP<->RJ`, `RJ<->MG`, `MG<->BA`, `BA<->DF`, `DF<->ES`.
+
+Muda só um número: o enlace MG-BA sobe de custo 10 para **1000**. Todos os demais enlaces, incluindo o link protegido SP-DF, seguem custo 10.
 
 ### Por que o double-segment aparece
 
 Refazendo o cálculo de P-space (estendido, via o vizinho RJ) e Q-space com o novo custo:
 
-**P-space estendido(SP, SP-DF)** - inalterado em relação ao single-segment, porque nenhum caminho relevante *a partir de SP ou de RJ* passa pelo enlace MG-BA:
+**P-space estendido(SP, SP-DF)**, nós cujo caminho mais curto, a partir de SP ou de RJ, não usa o link protegido:
 
 | Nó | Caminho mais curto | No P-space? |
 |---|---|:-:|
 | RJ | `SP-RJ` (10) | **sim** (direto) |
 | MG | `SP-RJ-MG` (20) | **sim** (direto) |
-| BA | de SP: `SP-DF-BA` (20, usa o link protegido). De RJ: `RJ-SP-DF-BA` (30, usa o link) contra `RJ-MG-BA` (1010) | **não** - o caminho mais curto de RJ até BA também acaba usando o link protegido, já que `RJ-MG-BA` ficou caro demais com o novo custo |
+| BA | de SP: `SP-DF-BA` (20, usa o link protegido). De RJ: `RJ-SP-DF-BA` (30, usa o link) contra `RJ-MG-BA` (1010) | **não**, o caminho mais curto de RJ até BA também acaba usando o link protegido, já que `RJ-MG-BA` ficou caro demais com o novo custo |
 
-**Q-space(ES, SP-DF)** - aqui o custo 1000 em MG-BA muda tudo:
+**Q-space(ES, SP-DF)**, aqui o custo 1000 em MG-BA muda tudo:
 
 | Nó | Caminho mais curto até ES | Usa SP-DF? | No Q-space? |
 |---|---|:-:|:-:|
@@ -32,11 +34,13 @@ Refazendo o cálculo de P-space (estendido, via o vizinho RJ) e Q-space com o no
 | MG | `MG-BA-DF-ES` (1020) contra `MG-RJ-SP-DF-ES` (40, usa o link protegido) | o mais barato usa o link protegido | **não** |
 | RJ | `RJ-SP-DF-ES` (30, usa o link protegido) | sim | não |
 
-Com MG-BA custando 1000, o caminho de MG até ES que evita o link protegido (`MG-BA-DF-ES`, custo 1020) deixou de ser competitivo - o caminho mais curto real de MG passa a ser via SP, isto é, via o próprio link que caiu. MG sai do Q-space. Pelo mesmo motivo (o mesmo enlace caro), BA sai do P-space estendido de RJ.
+Com MG-BA custando 1000, o caminho de MG até ES que evita o link protegido (`MG-BA-DF-ES`, custo 1020) deixou de ser competitivo: o caminho mais curto real de MG passa a ser via SP, isto é, via o próprio link que caiu. MG sai do Q-space.
 
-**P-space ∩ Q-space = ∅.** P-space estendido = `{RJ, MG}`, Q-space = `{BA}` - nenhum nó comum aos dois. Mas MG é vizinho físico direto de BA - essa adjacência é o que permite ao TI-LFA ainda calcular um backup, "pulando" de P-space para Q-space por um enlace específico em vez de por caminho mais curto. Diferente do single-segment, aqui só existe um candidato possível de cada lado (MG do P-space, BA do Q-space) - sem ambiguidade.
+O mesmo enlace caro derruba BA do P-space estendido, só que pelo lado oposto do cálculo. Do ponto de vista de RJ, alcançar BA por `RJ-MG-BA` custa 1010, então o caminho mais curto de RJ até BA volta a ser via SP e o link protegido.
 
-Backup calculado: `push { prefix-SID(MG) 16005, Adj-SID(MG->BA) }` abaixo do `prefix-SID(ES) 16004`. O Adj-SID força a travessia do enlace MG-BA especificamente - ignorando seu custo IGP de 1000 - porque Adj-SID não é uma instrução de "caminho mais curto", é uma instrução de "saia exatamente por este enlace".
+**P-space ∩ Q-space = ∅.** P-space estendido = `{RJ, MG}`, Q-space = `{BA}`, nenhum nó comum aos dois. Mas MG é vizinho físico direto de BA, e essa adjacência é o que permite ao TI-LFA ainda calcular um backup, pulando de P-space para Q-space por um enlace específico em vez de por caminho mais curto. Diferente do single-segment, aqui só existe um candidato possível de cada lado (MG do P-space, BA do Q-space), sem ambiguidade.
+
+Backup calculado: `push { prefix-SID(MG) 16005, Adj-SID(MG->BA) }` abaixo do `prefix-SID(ES) 16004`. O Adj-SID força a travessia do enlace MG-BA especificamente, ignorando seu custo IGP de 1000, porque Adj-SID não é uma instrução de "caminho mais curto", é uma instrução de "saia exatamente por este enlace".
 
 ---
 
@@ -44,7 +48,7 @@ Backup calculado: `push { prefix-SID(MG) 16005, Adj-SID(MG->BA) }` abaixo do `pr
 
 ![double-segment](./images/topology-double-segment.png)
 
-MG (verde, **P-node**) é o nó mais distante do P-space que o TI-LFA consegue alcançar de forma barata. BA (âmbar, **Q-node**) é o nó do Q-space adjacente a ele. O enlace entre os dois (dourado, rotulado com o Adj-SID forçado) é fisicamente o mesmo MG-BA de sempre - só que agora o SR o atravessa por indicação explícita, não por ser o caminho mais barato.
+MG (verde, **P-node**) é o nó mais distante do P-space que o TI-LFA consegue alcançar de forma barata. BA (âmbar, **Q-node**) é o nó do Q-space adjacente a ele. O enlace entre os dois (dourado, rotulado com o Adj-SID forçado) é fisicamente o mesmo MG-BA de sempre, só que agora o SR o atravessa por indicação explícita, não por ser o caminho mais barato.
 
 ---
 
@@ -92,31 +96,32 @@ Seis nós, de 10 a 12 GB de RAM. A rede de gerência é `172.20.23.0/24`, difere
 
 Acesso: `ssh clab@172.20.23.11`, senha `clab@123`. Ou `sudo docker exec -it clab-tilfa-double-segment-sp /pkg/bin/xr_cli.sh`.
 
-![Nós do lab apos o clab deploy](./images/terminal-deploy.png)
+![Nós do lab após o clab deploy](./images/terminal-deploy.png)
 
 ```bash
 # Derrubar o lab
 sudo clab destroy -t double-segment.clab.yml --cleanup
 ```
 
-
 ---
 
 ## Verificação
 
 ### 1. Adjacências OSPF
-**EM SP**
+
+**Em SP:**
 
 ```
 show ospf neighbor
 ```
+
 ![show ospf neighbor em SP](./images/terminal-ospf-neighbor.png)
 
-Igual ao single-segment - seis nós, todas as adjacências `FULL/-`. A interface MG-BA continua formando adjacência normalmente; custo alto não impede a adjacência OSPF, apenas torna o enlace pouco atrativo para SPF.
+Igual ao single-segment. SP deve ter exatamente dois vizinhos, DF e RJ, ambos `FULL/-`. A interface MG-BA continua formando adjacência normalmente: custo alto não impede a adjacência OSPF, apenas torna o enlace pouco atrativo para SPF.
 
 ### 2. Confirmar o custo elevado
 
-Em MG:
+Em MG, na interface do enlace MG-BA:
 
 ```
 show ospf interface GigabitEthernet0/0/0/1
@@ -124,17 +129,17 @@ show ospf interface GigabitEthernet0/0/0/1
 
 ![show ospf interface Gi0/0/0/1 em MG, Cost 1000](./images/terminal-ospf-interface.png)
 
-(ajustar o número da interface conforme o `.cfg`). Esperado: `Cost: 1000`.
+Esperado: `Cost: 1000`.
 
 ### 3. Backup TI-LFA para ES
 
-**Em SP**:
+**Em SP:**
 
 ```
 show cef 10.0.1.251/32 detail
 ```
-![show cef 10.0.1.251/32 detail em SP](./images/terminal-show-cef.png)
 
+![show cef 10.0.1.251/32 detail em SP](./images/terminal-show-cef.png)
 
 O campo `labels imposed` na entrada de backup deve mostrar **três** labels. Na execução capturada acima:
 
@@ -155,6 +160,7 @@ show ospf segment-routing adjacency-sids
 ```
 
 ![show ospf segment-routing adjacency-sids em MG](./images/terminal-adjacency-sids.png)
+
 Esperado: linhas com `Neighbor ID 10.0.1.248` (BA) na `Interface Gi0/0/0/1`. Na captura acima:
 
 ```text
@@ -162,11 +168,15 @@ Esperado: linhas com `Neighbor ID 10.0.1.248` (BA) na `Interface Gi0/0/0/1`. Na 
 24003  10.0.1.248  10.10.57.2  Gi0/0/0/1  D P B  10.10.35.1  Gi0/0/0/0
 ```
 
-Aparecem duas entradas para o mesmo vizinho, uma desprotegida (`U N`) e uma protegida com backup (`P B`). O `24002` da primeira linha é exatamente o label do meio da pilha vista no `show cef` de SP, o que fecha a prova: o segmento do meio do backup é a adjacência MG para BA, e não um caminho calculado por custo.
+Aparecem duas entradas para o mesmo vizinho: uma desprotegida (`U N`, unprotected / no backup path) e uma protegida com backup (`P B`, protected / has backup path). O `24002` da primeira linha é exatamente o label do meio da pilha vista no `show cef` de SP.
+
+O TI-LFA usa a entrada **desprotegida**, e não a protegida. O motivo é que o pacote que carrega essa pilha já está trafegando por um caminho de reparo. Proteger o segmento de reparo com um segundo backup criaria recursão: um desvio dentro do desvio, com risco de loop e sem garantia de convergência. O Adj-SID desprotegido diz apenas "saia por este enlace", sem plano alternativo, que é exatamente o que o cálculo de reparo precisa.
+
+Isso fecha a prova: o segmento do meio do backup é a adjacência MG para BA, e não um caminho calculado por custo.
 
 ### 4. Diferença de comportamento vs. single-segment
 
-Compare com o `show cef` do single-segment (rodado em SP também, lá):
+Compare com o `show cef` do single-segment, rodado em SP também:
 
 | | single-segment | double-segment |
 |---|---|---|
