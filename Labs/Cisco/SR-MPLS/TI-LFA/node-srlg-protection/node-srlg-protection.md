@@ -2,7 +2,7 @@
 
 ## Contexto
 
-Os labs anteriores (Zero/Single/Double-Segment) tratam todos do mesmo tipo de falha: **queda de um link**. TI-LFA calcula, por padrão, um backup que só garante desviar daquele link específico - se o problema real for o **nó** do outro lado caindo por completo, ou se o próprio backup escolhido compartilhar risco físico com o link original (mesma rota de fibra, mesmo duto, mesmo cartão), a proteção de link sozinha não é suficiente.
+Os labs anteriores (Zero/Single/Double-Segment) tratam todos do mesmo tipo de falha: **queda de um link**. TI-LFA calcula, por padrão, um backup que só garante desviar daquele link específico. Se o problema real for o **nó** do outro lado caindo por completo, ou se o próprio backup escolhido compartilhar risco físico com o link original (mesma rota de fibra, mesmo duto, mesmo cartão), a proteção de link sozinha não é suficiente.
 
 Este lab configura os dois níveis adicionais de proteção que o TI-LFA oferece a partir do IOS-XR 6.1.1: **node protection** (o backup contorna o nó inteiro, não só o link até ele) e **local SRLG protection** (o backup evita enlaces que compartilham grupo de risco com o enlace protegido). Ver [`concepts.md`](../concepts.md) para a explicação conceitual de tiebreakers e SRLG antes de seguir.
 
@@ -10,23 +10,23 @@ Este lab configura os dois níveis adicionais de proteção que o TI-LFA oferece
 
 ## Este lab
 
-Topologia com seis PoPs: uma cadeia primária de três saltos (SP -> MG -> BA -> DF) e uma "ponte" alta de dois PoPs adicionais (RJ, PR) que oferece rotas alternativas de qualidades diferentes.
+Topologia com seis PoPs: uma cadeia primária de três saltos (SP -> MG -> BA -> DF) e uma ponte alta de dois PoPs adicionais (RJ, PR) que oferece rotas alternativas de qualidades diferentes.
 
-SP é o PLR e protege o enlace SP-MG - mas o interesse deste lab não é só esse link: é o que acontece quando o **nó MG inteiro** cai, e quando o backup escolhido por padrão acaba compartilhando infraestrutura física com o próprio recurso que deveria proteger.
+SP é o PLR e protege o enlace SP-MG. O interesse deste lab não é só esse link: é o que acontece quando o **nó MG inteiro** cai, e quando o backup escolhido por padrão acaba compartilhando infraestrutura física com o próprio recurso que deveria proteger.
 
 ### O atalho armadilha: RJ-MG
 
-Além da cadeia principal e da ponte alta, existe um enlace direto RJ-MG, custo 15 - mais barato que ir por PR (que custaria 10+100=110 até MG). Esse enlace **compartilha a mesma canaleta física** do link SP-MG (ambos saem da região de SP em direção a MG pela mesma rota de fibra) - daí o nome do grupo SRLG usado neste lab, `ipe-mg-duct`.
+Além da cadeia principal e da ponte alta, existe um enlace direto RJ-MG, custo 15, mais barato que qualquer alternativa via PR. Esse enlace **compartilha a mesma canaleta física** do link SP-MG (ambos saem da região de SP em direção a MG pela mesma rota de fibra), daí o nome do grupo SRLG usado neste lab, `ipe-mg-duct`.
 
-Sem nenhuma configuração de tiebreaker, o TI-LFA em SP escolhe o backup mais barato que for loop-free - e `SP -> RJ -> MG` (custo 10+15=25) vence facilmente contra qualquer alternativa via PR (custo 110+). Esse backup:
+Sem nenhuma configuração de tiebreaker, o TI-LFA em SP escolhe o backup mais barato que for loop-free, e `SP -> RJ -> MG` (custo 10+15=25) vence facilmente. Para efeito de comparação, o caminho que contorna MG por completo (`SP -> RJ -> PR -> BA`) custa 210, oito vezes mais caro. Esse backup pelo atalho:
 
 - protege corretamente contra a queda do **link** SP-MG (é um caminho fisicamente distinto até MG);
 - **não** protege contra a queda do **nó** MG (o backup termina exatamente em MG);
-- **não** protege contra uma falha de **SRLG** que derrube tanto SP-MG quanto RJ-MG ao mesmo tempo (ambos passam pela mesma canaleta) - embora, como o passo 3 da verificação mostra, o atributo `SRLG Disjoint` reportado pelo IOS-XR não capture isso de forma limpa neste caso específico.
+- **não** protege contra uma falha de **SRLG** que derrube tanto SP-MG quanto RJ-MG ao mesmo tempo (ambos passam pela mesma canaleta), embora, como o passo 3 da verificação mostra, o atributo `SRLG Disjoint` reportado pelo IOS-XR não capture isso de forma limpa neste caso específico.
 
 ### A alternativa segura: SP -> RJ -> PR -> BA
 
-Existe um caminho que resolve os dois problemas ao mesmo tempo: `SP -> RJ -> PR -> BA` (custo 10+100+100=210), que contorna MG por completo e não toca em nenhum enlace do grupo `ipe-mg-duct`. É mais caro que o atalho RJ-MG, então só é escolhido se o TI-LFA for instruído a preferir proteção de nó sobre custo bruto - exatamente o papel dos **tiebreakers**.
+Existe um caminho que resolve os dois problemas ao mesmo tempo: `SP -> RJ -> PR -> BA` (custo 10+100+100=210), que contorna MG por completo e não toca em nenhum enlace do grupo `ipe-mg-duct`. É mais caro que o atalho RJ-MG, então só é escolhido se o TI-LFA for instruído a preferir proteção de nó sobre custo bruto, exatamente o papel dos **tiebreakers**.
 
 ---
 
@@ -44,11 +44,11 @@ router ospf 1
    fast-reroute per-prefix tiebreaker srlg-disjoint index 100
 ```
 
-Índice maior = maior preferência. Aqui `node-protecting` (200) é preferido sobre `srlg-disjoint` (100) quando as duas propriedades não puderem ser satisfeitas pelo mesmo caminho.
+Índice maior significa maior preferência. Aqui `node-protecting` (200) é preferido sobre `srlg-disjoint` (100) quando as duas propriedades não puderem ser satisfeitas pelo mesmo caminho.
 
 ## Declaração do grupo SRLG
 
-SRLG é um atributo de enlace, declarado localmente em cada roteador dono de uma ponta:
+SRLG (Shared Risk Link Group) é um atributo de enlace, declarado localmente em cada roteador dono de uma ponta:
 
 ```text
 srlg
@@ -59,7 +59,7 @@ srlg
 !
 ```
 
-Neste lab, `ipe-mg-duct` é declarado em três interfaces: a de SP voltada para MG, e as duas pontas do enlace RJ-MG (em RJ e em MG). Ver `configs/sp.cfg`, `configs/mg.cfg` e `configs/rj.cfg` para o bloco completo.
+Neste lab, `ipe-mg-duct` é declarado em quatro interfaces: as duas pontas do link protegido SP-MG (em SP e em MG) e as duas pontas do atalho RJ-MG (em RJ e em MG). MG participa de dois links do grupo, então aparece duas vezes: uma para a interface que dá em SP, outra para a que dá em RJ. Ver `configs/sp.cfg`, `configs/mg.cfg` e `configs/rj.cfg` para o bloco completo.
 
 ---
 
@@ -113,13 +113,12 @@ Seis nós e oito enlaces, de 10 a 12 GB de RAM.
 
 Acesso: `ssh clab@172.20.24.11`, senha `clab@123`. Ou `sudo docker exec -it clab-tilfa-node-srlg-protection-sp /pkg/bin/xr_cli.sh`.
 
-![Nós do lab apos o clab deploy](./images/terminal-deploy.png)
+![Nós do lab após o clab deploy](./images/terminal-deploy.png)
 
 ```bash
 # Derrubar o lab
 sudo clab destroy -t node-srlg-protection.clab.yml --cleanup
 ```
-
 
 ---
 
@@ -132,7 +131,7 @@ show ospf neighbor
 show ospf database opaque-area self-originate
 ```
 
-Em SP, procurar pela LSA da interface `10.10.15.1` (SP->MG): deve conter um bloco `GMPLS Shared Risked Link Group` com `[1]: 100` - confirma que o grupo `ipe-mg-duct` está sendo distribuído via IGP, não só configurado localmente. Se o dump vier longo, filtrar:
+Em SP, procurar pela LSA da interface `10.10.15.1` (SP->MG): deve conter um bloco `GMPLS Shared Risk Link Group` com `[1]: 100`. Confirma que o grupo `ipe-mg-duct` está sendo distribuído via IGP, não só configurado localmente. Se o dump vier longo, filtrar:
 
 ```
 show ospf database opaque-area self-originate | include SRLG
@@ -158,7 +157,7 @@ O    10.0.1.253/32, metric 31
               Attributes: Metric: 221, Node Protect, Interface Disjoint, SRLG Disjoint
 ```
 
-`P node: 10.0.1.249` é PR - exatamente o waypoint esperado, não MG nem o atalho. `Node Protect` na lista de atributos confirma que o backup contorna o nó inteiro, não só o link.
+`P node: 10.0.1.249` é PR, exatamente o waypoint esperado, não MG nem o atalho. `Node Protect` na lista de atributos confirma que o backup contorna o nó inteiro, não só o link.
 
 ### 3. Comparando com e sem tiebreaker
 
@@ -184,7 +183,13 @@ O    10.0.1.253/32, metric 31
               Attributes: Metric: 46, Interface Disjoint, SRLG Disjoint
 ```
 
-Sem tiebreaker, o backup muda para o atalho RJ-MG (metric mais baixo) e **`Node Protect` desaparece** - a diferença mais clara e esperada. `SRLG Disjoint` continua aparecendo mesmo aqui, sem o tiebreaker configurado: esse atributo parece ser calculado sobre o par local de interfaces do próprio SP (a protegida vs. a de backup), não sobre a SRLG do caminho inteiro até o destino - então ele não captura sozinho que o atalho RJ-MG, mais à frente, reusa a mesma canaleta física do link protegido. **`Node Protect` é o atributo que de fato prova a diferença neste teste; `SRLG Disjoint` não é confiável como prova isolada nesse formato de saída.**
+A diferença não é só de custo. SP só tem um vizinho físico alternativo, RJ, então o próximo salto nunca muda, com ou sem tiebreaker. O que muda é o mecanismo por trás desse salto.
+
+Com o tiebreaker, SP impõe o label de PR (`16006`) e força RJ a desviar do próprio caminho nativo dele, entregando o pacote a um repair path calculado explicitamente. É TI-LFA remoto de verdade, por isso a `Repair-List` aparece preenchida.
+
+Sem o tiebreaker, SP não impõe nenhum label. RJ recebe o pacote e decide sozinho por onde mandar, usando o próprio caminho mais curto dele até DF, que é justamente o atalho RJ-MG. Isso é LFA clássico, não TI-LFA: por isso a `Repair-List` fica vazia e `Node Protect` desaparece.
+
+`SRLG Disjoint` continua aparecendo mesmo aqui, sem o tiebreaker configurado. Esse atributo parece ser calculado sobre o par local de interfaces do próprio SP (a protegida contra a de backup), não sobre a SRLG do caminho inteiro até o destino. Por isso ele não captura sozinho que o atalho RJ-MG, mais à frente, reusa a mesma canaleta física do link protegido. `Node Protect` é o atributo que de fato prova a diferença neste teste. `SRLG Disjoint` não é confiável como prova isolada nesse formato de saída.
 
 Reaplique as duas linhas antes de continuar:
 
@@ -214,7 +219,7 @@ traceroute 10.0.1.253 source 10.0.1.254
 
 ![shutdown da Gi0/0/0/1 e traceroute em SP](./images/terminal-traceroute-link.png)
 
-**Atenção ao timing.** Se o traceroute rodar alguns segundos depois do shutdown, a rede já reconvergiu de verdade - e nesse caso o caminho novo tende a reusar o atalho RJ-MG (custo mais barato), não passar por PR:
+Atenção ao timing. Se o traceroute rodar alguns segundos depois do shutdown, a rede já reconvergiu de verdade, e nesse caso o caminho novo tende a reusar o atalho RJ-MG (custo mais barato), não passar por PR:
 
 ```text
 1  10.10.13.2   (RJ)
@@ -223,7 +228,7 @@ traceroute 10.0.1.253 source 10.0.1.254
 4  10.10.27.1   (DF)
 ```
 
-Isso não é falha do lab - é esperado. MG continua vivo (só o *link* SP-MG caiu), então uma vez reconvergida, a rede não tem motivo pra evitar MG - o tiebreaker de node-protection só controla o **backup pré-instalado**, ativo apenas na janela entre a falha e a reconvergência completa, não a rota nova depois que tudo se acomoda. A prova de que a proteção de nó funcionou já está no passo 2, capturada com o link ainda ativo.
+Isso não é falha do lab, é esperado. MG continua vivo (só o *link* SP-MG caiu), então uma vez reconvergida, a rede não tem motivo pra evitar MG. O tiebreaker de node-protection só controla o **backup pré-instalado**, ativo apenas na janela entre a falha e a reconvergência completa, não a rota nova depois que tudo se acomoda. A prova de que a proteção de nó funcionou já está no passo 2, capturada com o link ainda ativo.
 
 Religue antes do próximo passo:
 
@@ -237,7 +242,7 @@ end
 
 ### 5. Simulação: falha do nó MG inteiro
 
-Aqui sim - derrubando o nó inteiro (não só uma interface), MG deixa de existir como opção, e o caminho reconvergido é forçado a passar por PR de verdade:
+Aqui sim, derrubando o nó inteiro (não só uma interface), MG deixa de existir como opção, e o caminho reconvergido é forçado a passar por PR de verdade:
 
 ```bash
 sudo docker stop clab-tilfa-node-srlg-protection-mg
@@ -260,7 +265,7 @@ Esperado:
 4  10.10.27.1   (DF)
 ```
 
-Diferente do passo 4: aqui não existe alternativa mais barata que reuse MG, porque MG não existe mais - o caminho por PR é o único disponível, então esse teste isola de forma limpa o que a proteção de nó realmente resolve (uma falha onde o nó protegido simplesmente não está mais lá para ser reusado).
+Diferente do passo 4: aqui não existe alternativa mais barata que reuse MG, porque MG não existe mais. O caminho por PR é o único disponível, então esse teste isola de forma limpa o que a proteção de nó realmente resolve, uma falha onde o nó protegido simplesmente não está mais lá para ser reusado.
 
 Religue o nó depois:
 
@@ -272,4 +277,4 @@ sudo docker start clab-tilfa-node-srlg-protection-mg
 
 ## Node xor SRLG: quando as duas propriedades entram em conflito
 
-Este lab foi desenhado para que **um único caminho** (`SP-RJ-PR-BA`) satisfaça node protection e SRLG protection ao mesmo tempo - o caso mais comum na prática. Mas as duas propriedades nem sempre coincidem: é possível existir um caminho que contorna o nó protegido mas ainda usa um link da mesma SRLG, e outro caminho que evita a SRLG mas ainda atravessa o nó protegido. Quando isso acontece e nenhum caminho único satisfaz as duas propriedades, o `node-protecting index` e o `srlg-disjoint index` decidem qual delas prevalece - o maior índice vence. Vale revisitar a configuração acima e considerar: se o índice de `srlg-disjoint` fosse maior que o de `node-protecting`, qual das duas propriedades este domínio passaria a priorizar em um cenário de conflito?
+Este lab foi desenhado para que **um único caminho** (`SP-RJ-PR-BA`) satisfaça node protection e SRLG protection ao mesmo tempo, o caso mais comum na prática. Mas as duas propriedades nem sempre coincidem: é possível existir um caminho que contorna o nó protegido mas ainda usa um link da mesma SRLG, e outro caminho que evita a SRLG mas ainda atravessa o nó protegido. Quando isso acontece e nenhum caminho único satisfaz as duas propriedades, o `node-protecting index` e o `srlg-disjoint index` decidem qual delas prevalece: o maior índice vence. Vale revisitar a configuração acima e considerar: se o índice de `srlg-disjoint` fosse maior que o de `node-protecting`, qual das duas propriedades este domínio passaria a priorizar em um cenário de conflito?
