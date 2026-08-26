@@ -29,9 +29,11 @@ SP -> MG -> BA -> DF  custo 10 + 10 + 10 = 30
 
 O TI-LFA calcula o P-space de SP sem o link SP-DF: MG é vizinho direto, BA é alcançável via MG. P-space = {MG, BA}. O Q-space de DF sem cruzar SP-DF: MG alcança DF diretamente, BA alcança DF diretamente. Q-space = {MG, BA}.
 
-A interseção é {MG, BA}. O TI-LFA elege MG porque é vizinho direto do SP e tem menor custo até DF (custo 20 vs 30 via BA). MG é o PQ-node. Stack = `{ 16002 }`.
+A interseção é {MG, BA}. BA não é vizinho direto do SP: chegar até ele já exigiria um segmento extra, o que tira BA da categoria zero-segment de saída. MG, por ser vizinho direto do SP e também estar no Q-space, é o PQ-node mais próximo possível: o TI-LFA não precisa empilhar nenhum label além do Node-SID do destino. MG é o PQ-node. Stack = `{ 16002 }`.
 
-> O link SP-DF tem custo 1000 e os demais têm custo 10. Isso é um artifício do lab: como todas as interfaces do XRd são GigabitEthernet com custo igual por padrão, elevar o custo de SP-DF força o OSPF a preferir o caminho via MG, tornando o backup visível no CEF no estado normal. Em produção, o link SP-DF seria o caminho primário com custo baixo e o backup ficaria instalado na FIB sem aparecer como rota ativa, sendo ativado apenas no momento da falha.
+> Todos os links têm custo 10, incluindo SP-DF. Isso já basta para o SP-DF ser o caminho mais curto até DF (um salto, custo 10, contra dois saltos, custo 20, via MG), não é preciso mexer em custo nenhum para isso. O backup calculado pelo TI-LFA fica pré-instalado no CEF assim que o SPF converge, esteja o link protegido ativo ou não; é essa pré-instalação que permite a troca de caminho em milissegundos quando o link cai, sem esperar um novo SPF. A seção de Verificação mostra essa entrada de backup já presente com o link ainda no ar (passo 3) e a troca de caminho de fato acontecendo depois do shutdown (passo 4).
+>
+> Vale registrar: como o PQ-node aqui é vizinho direto tanto do PLR quanto do destino, a condição clássica de loop-free alternate já é satisfeita sozinha. O backup que aparece no CEF é do tipo Local-LFA, não uma pilha de labels TI-LFA: o Node-SID do DF (16002) só entra porque MG não é o destino final, então o pacote ainda precisa ser roteado por label até chegar lá. Uma pilha de TI-LFA de verdade (SID de nó + SID de adjacência) só aparece a partir do single-segment.
 
 ---
 
@@ -56,7 +58,7 @@ O label de cada node é calculado como base do SRGB + SID index. Com SRGB 16000-
 
 | Link | Subnet | Custo |
 |------|--------|-------|
-| SP-DF | 10.10.12.0/30 | 1000 |
+| SP-DF | 10.10.12.0/30 | 10 |
 | SP-MG | 10.10.15.0/30 | 10 |
 | MG-DF | 10.10.25.0/30 | 10 |
 | MG-BA | 10.10.57.0/30 | 10 |
@@ -86,7 +88,6 @@ Acesso: `ssh clab@172.20.21.11`, senha `clab@123`. Ou `sudo docker exec -it clab
 # Derrubar o lab
 sudo clab destroy -t zero-segment.clab.yml --cleanup
 ```
-
 
 ---
 
@@ -123,7 +124,7 @@ show ospf neighbor
 
 O OSPF precisa ter adjacência com todos os vizinhos antes de qualquer coisa funcionar. Sem vizinhanças em estado FULL, o roteador não tem visibilidade completa da topologia e o TI-LFA não consegue calcular os backups.
 
-O SP forma adjacência com dois vizinhos: DF via Gi0/0/0/0 (custo 1000, link protegido) e MG via Gi0/0/0/1 (custo 10, caminho de backup). O estado `FULL/-` significa que a adjacência está completa e o banco de dados de topologia está sincronizado. O `-` indica ausência de eleição de DR/BDR porque as interfaces estão em modo `point-to-point`, correto para links entre dois roteadores.
+O SP forma adjacência com dois vizinhos: DF via Gi0/0/0/0 (custo 10, link protegido, caminho primário) e MG via Gi0/0/0/1 (custo 10, caminho de backup). O estado `FULL/-` significa que a adjacência está completa e o banco de dados de topologia está sincronizado. O `-` indica ausência de eleição de DR/BDR porque as interfaces estão em modo `point-to-point`, correto para links entre dois roteadores.
 
 O campo `Dead Time` conta regressivamente. Se chegar a zero sem receber um Hello do vizinho, o OSPF declara o vizinho inativo e inicia reconvergência. No TI-LFA, a detecção de falha via sinalização de hardware acontece em milissegundos, antes do Dead Time expirar.
 
@@ -145,7 +146,7 @@ Cada enlace aparece em duas linhas. A primeira é o Adjacency-SID sem proteção
 
 `24001 / 10.0.1.253 / Gi0/0/0/0 / D P B / backup: 10.10.15.2 / Gi0/0/0/1`: adj-SID protegido para o link SP-DF. Se esse link cair, o SP desvia via MG (10.10.15.2) pela Gi0/0/0/1.
 
-`24003 / 10.0.1.250 / Gi0/0/0/1 / D P B / backup: 10.10.12.2 / Gi0/0/0/0`: adj-SID protegido para o link SP-MG. Se esse link cair, o backup vai pelo link SP-DF. Como SP-DF tem custo 1000, este cenário é o caminho de último recurso.
+`24003 / 10.0.1.250 / Gi0/0/0/1 / D P B / backup: 10.10.12.2 / Gi0/0/0/0`: adj-SID protegido para o link SP-MG. Se esse link cair, o backup vai pelo link SP-DF. Como os dois links têm o mesmo custo, essa proteção não depende de um caminho ser mais caro que o outro; é só uma alternativa loop-free válida para essa adjacência específica.
 
 A presença de entradas com `P B` e backup nexthop preenchido confirma que o TI-LFA concluiu o cálculo e a proteção está ativa antes de qualquer falha.
 
@@ -165,17 +166,27 @@ show cef 10.0.1.253/32 detail
 
 `10.0.1.253/32, labeled SR` confirma que a entrada é para o prefixo do DF tratado como SR.
 
-`local adjacency to GigabitEthernet0/0/0/1` indica o próximo salto preferido no momento, MG via Gi0/0/0/1.
+`local adjacency to GigabitEthernet0/0/0/0` indica o próximo salto preferido no momento, DF direto via Gi0/0/0/0.
 
-O bloco `via 10.10.12.2/32, GigabitEthernet0/0/0/0`: caminho via DF direto, marcado como `backup (Local-LFA)`. `labels imposed {ImplNull}` indica PHP (Penultimate Hop Popping) - o label é removido antes de entregar, pois DF é vizinho direto. Este é o backup do caminho via MG caso ele falhe.
+O bloco `via 10.10.12.2/32, GigabitEthernet0/0/0/0`: caminho primário, direto para DF, marcado como `protected`. `labels imposed {ImplNull}` indica PHP (Penultimate Hop Popping): sem label, porque DF é vizinho direto.
 
-O bloco `via 10.10.15.2/32, GigabitEthernet0/0/0/1`: caminho primário via MG, marcado como `protected`. `labels imposed {16002}` é a SID-list imposta: apenas o Node-SID do DF, sem label adicional. Isso caracteriza o Zero-Segment - MG é vizinho direto do SP e alcança DF diretamente.
+O bloco `via 10.10.15.2/32, GigabitEthernet0/0/0/1`: caminho via MG, marcado como `backup (Local-LFA)`. `labels imposed {16002}` é a SID-list imposta: como MG não é o destino final, o pacote precisa do Node-SID do DF para ser encaminhado depois de chegar lá. Isso caracteriza o Zero-Segment: um único label, sem segmento extra.
 
-A tabela de distribuição ao final mostra o tráfego concentrado em Gi0/0/0/1 (MG), com Gi0/0/0/0 (DF direto) como backup instalado.
+A tabela de distribuição ao final mostra o tráfego concentrado em Gi0/0/0/0 (DF direto), com Gi0/0/0/1 (MG) como backup instalado.
 
 ---
 
-### 4. Simulacao de falha
+### 4. Simulação de falha
+
+Antes de mexer em qualquer coisa, o caminho para DF já passa direto pela Gi0/0/0/0:
+
+```
+traceroute 10.0.1.253 source 10.0.1.254
+```
+
+![traceroute para DF antes da falha](./images/terminal-traceroute-antes.png)
+
+Um salto só, sem label MPLS. O pacote sai como IP puro porque o próximo salto já é o próprio destino (PHP).
 
 Derrubar o link SP-DF:
 
@@ -187,18 +198,15 @@ commit
 end
 ```
 
-Verificar o caminho após a falha:
+Verificar o caminho depois da falha:
 
 ```
 traceroute 10.0.1.253 source 10.0.1.254
 ```
-
-![traceroute para DF apos a falha](./images/terminal-traceroute.png)
-
-O traceroute mostra o caminho real dos pacotes após a falha. Cada linha é um salto na rede.
+![traceroute para DF depois da falha](./images/terminal-traceroute.png)
 
 `1  10.10.15.2 [MPLS: Label 16002 Exp 0]`: primeiro salto, MG (10.10.15.2). O campo `[MPLS: Label 16002]` confirma que o label está presente no pacote neste ponto. `Exp 0` é o campo de QoS do cabeçalho MPLS, sem uso aqui.
 
 `2  10.10.25.2`: segundo salto, DF (10.10.25.2). MG encaminha diretamente para DF pelo link MG-DF. DF faz pop do label e entrega o pacote. O `*` indica que uma das três sondas não respondeu, comportamento normal no XRd.
 
-Dois saltos, label `{ 16002 }` saindo do SP e presente até MG. MG consulta a LFIB local, vê que 16002 aponta para DF e encaminha sem nenhuma instrução adicional. Nenhum roteador intermediário sabe que houve uma falha. Toda a decisão de caminho está no PLR. Os intermediários são stateless.
+Antes da falha, um salto sem label. Depois, dois saltos com o label `{ 16002 }` saindo do SP e presente até MG. A diferença entre os dois traceroutes é a prova de que o caminho mudou de verdade, e não só de que ele já era esse desde o início. MG consulta a LFIB local, vê que 16002 aponta para DF e encaminha sem nenhuma instrução adicional. Nenhum roteador intermediário sabe que houve uma falha. Toda a decisão de caminho está no PLR. Os intermediários são stateless.

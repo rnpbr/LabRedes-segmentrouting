@@ -29,24 +29,24 @@ topology:
   kinds:
     cisco_xrd:
       image: ios-xr/xrd-control-plane:7.10.2
-      enforce-startup-config: false
+      enforce-startup-config: true
       # para habilitar, o caminho do startup-config deve ser válido. Avaliando import de configs via URL, mas ainda nao definido.
   nodes:
     sp:
       mgmt-ipv4: 172.20.21.11
-#      startup-config: configs/sp.cfg
+      startup-config: configs/sp.cfg
     df:
       mgmt-ipv4: 172.20.21.12
-#      startup-config: configs/df.cfg
+      startup-config: configs/df.cfg
     mg:
       mgmt-ipv4: 172.20.21.15
- #     startup-config: configs/mg.cfg
+      startup-config: configs/mg.cfg
     ba:
       mgmt-ipv4: 172.20.21.17
-#      startup-config: configs/ba.cfg
+      startup-config: configs/ba.cfg
 
   links:
-    # SP-DF: enlace protegido, custo 1000
+    # SP-DF: enlace protegido, custo 10
     - endpoints: ["sp:Gi0-0-0-0", "df:Gi0-0-0-0"]
     # SP-MG: custo 10, primeiro salto do backup
     - endpoints: ["sp:Gi0-0-0-1", "mg:Gi0-0-0-0"]
