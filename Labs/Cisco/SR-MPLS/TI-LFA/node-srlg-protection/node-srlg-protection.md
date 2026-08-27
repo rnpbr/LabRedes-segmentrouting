@@ -128,14 +128,25 @@ sudo clab destroy -t node-srlg-protection.clab.yml --cleanup
 
 ```
 show ospf neighbor
+
 show ospf database opaque-area self-originate
 ```
 
-Em SP, procurar pela LSA da interface `10.10.15.1` (SP->MG): deve conter um bloco `GMPLS Shared Risk Link Group` com `[1]: 100`. Confirma que o grupo `ipe-mg-duct` está sendo distribuído via IGP, não só configurado localmente. Se o dump vier longo, filtrar:
+![show ospf](./images/terminal-ospf-neighbor.png)
+
+Em SP, procurar pela LSA da interface `10.10.15.1` (SP->MG): deve conter um bloco `GMPLS Shared Risked Link Group` com `[1]: 100`. Sim, "Risked", não "Risk": é a grafia real do IOS-XR nessa saída, não erro de digitação deste projeto. Confirma que o grupo `ipe-mg-duct` está sendo distribuído via IGP, não só configurado localmente.
+
+Duas pegadinhas neste passo:
+
+A LSA do SP-MG pode demorar alguns segundos a mais para aparecer que a do SP-RJ. Se o dump vier incompleto, ou faltando a entrada de `10.0.1.250`, espere um pouco e rode o comando de novo.
+
+O nome do grupo (`ipe-mg-duct`) nunca é anunciado pelo OSPF, só o valor numérico (`100`). É um rótulo local de configuração, não um atributo distribuído pela rede. Filtrar por `include ipe-mg-duct` não retorna nada em nenhum roteador, porque essa string não existe fora do `running-config` de quem configurou o link. Filtrar por `include SRLG` também não ajuda aqui: a frase "Number of SRLGs" aparece duas vezes para o mesmo link (uma no formato antigo de LSA, outra no formato novo usado por Segment Routing), sem nenhum contexto ao redor que diga a qual link pertence. Use o IP da interface em vez disso:
 
 ```
-show ospf database opaque-area self-originate | include SRLG
+show ospf database opaque-area self-originate | include 10.10.15.1
 ```
+
+![show ospf database](./images/terminal-ospf-database.png)
 
 ### 2. Backup instalado com os tiebreakers ativos
 
@@ -145,17 +156,9 @@ Em SP:
 show ospf routes 10.0.1.253/32 backup-path
 ```
 
-![show ospf routes 10.0.1.253/32 backup-path em SP](./images/terminal-backup-path.png)
-
 Esperado:
 
-```text
-O    10.0.1.253/32, metric 31
-       10.10.15.2, from 10.0.1.253, via GigabitEthernet0/0/0/1, path-id 1
-           Backup path: TI-LFA, Repair-List: P node: 10.0.1.249      Label: 16006
-              10.10.13.2, from 10.0.1.253, via GigabitEthernet0/0/0/0, protected bitmap 0000000000000001
-              Attributes: Metric: 221, Node Protect, Interface Disjoint, SRLG Disjoint
-```
+![show ospf routes 10.0.1.253/32 backup-path em SP](./images/terminal-backup-path.png)
 
 `P node: 10.0.1.249` é PR, exatamente o waypoint esperado, não MG nem o atalho. `Node Protect` na lista de atributos confirma que o backup contorna o nó inteiro, não só o link.
 
@@ -173,15 +176,9 @@ router ospf 1
 commit
 ```
 
-Repita o `show ospf routes 10.0.1.253/32 backup-path`. Esperado agora:
+Saia do modo de configuração antes do próximo comando (`end`, ou prefixe o show com `do` se quiser rodar direto do modo de configuração). Repita o `show ospf routes 10.0.1.253/32 backup-path`. Esperado agora:
 
-```text
-O    10.0.1.253/32, metric 31
-       10.10.15.2, from 10.0.1.253, via GigabitEthernet0/0/0/1, path-id 1
-           Backup path:
-              10.10.13.2, from 10.0.1.253, via GigabitEthernet0/0/0/0, protected bitmap 0000000000000001
-              Attributes: Metric: 46, Interface Disjoint, SRLG Disjoint
-```
+![show ospf routes](./images/terminal-show-ospf-routes-10.0.1.253.png)
 
 A diferença não é só de custo. SP só tem um vizinho físico alternativo, RJ, então o próximo salto nunca muda, com ou sem tiebreaker. O que muda é o mecanismo por trás desse salto.
 
@@ -247,6 +244,8 @@ Aqui sim, derrubando o nó inteiro (não só uma interface), MG deixa de existir
 ```bash
 sudo docker stop clab-tilfa-node-srlg-protection-mg
 ```
+
+![stop mg clab](./images/terminal-stop-mg-clab.png)
 
 Em SP:
 
