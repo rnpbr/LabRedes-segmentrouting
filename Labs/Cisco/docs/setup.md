@@ -63,7 +63,7 @@ cd LabRedes-segmentrouting
 
 mkdir -p ~/labs/ti-lfa/zero-segment
 cp IaC/Clabs/Cisco/ti-lfa/zero-segment.clab.yml ~/labs/ti-lfa/zero-segment/
-cp -r Labs/Cisco/SR-MPLS/TI-LFA/zero-segment/configs ~/labs/ti-lfa/zero-segment/
+cp -r Labs/Cisco/SR-MPLS/TI-LFA/00-zero-segment/configs ~/labs/ti-lfa/zero-segment/
 
 cd ~/labs/ti-lfa/zero-segment
 sudo clab deploy -t zero-segment.clab.yml

@@ -1,6 +1,6 @@
 > Referencia externa, em ingles, mantida como material de origem.
 > A versao canonica em portugues dos conceitos e convencoes deste projeto
-> esta em `Labs/Cisco/base.md`, que e o documento a seguir para os labs.
+> esta em `Labs/Cisco/docs/base.md`, que e o documento a seguir para os labs.
 
 # Cisco XRd 5-Node SR-MPLS Lab
 

@@ -10,7 +10,7 @@
 #
 # Para servir os .cfg direto do GitHub em vez de copiar configs/ para o disco,
 # troque o caminho de cada no por uma URL raw:
-#   startup-config: https://raw.githubusercontent.com/rnpbr/LabRedes-segmentrouting/main/Labs/Cisco/SR-MPLS/TI-LFA/single-segment/configs/sp.cfg
+#   startup-config: https://raw.githubusercontent.com/rnpbr/LabRedes-segmentrouting/main/Labs/Cisco/SR-MPLS/TI-LFA/01-single-segment/configs/sp.cfg
 # Ref: https://containerlab.dev/manual/config-mgmt/#remote
 #
 # enforce-startup-config faz todo deploy reaplicar o .cfg, em vez de reusar a

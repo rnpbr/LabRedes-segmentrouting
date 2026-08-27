@@ -1,6 +1,6 @@
 # TI-LFA - conceitos
 
-> Os diagramas `topology-*.png` de cada lab saem de [`diagrams/ti-lfa-topologies.drawio`](./diagrams/ti-lfa-topologies.drawio), uma página por cenário. Editar lá e reexportar.
+> Os diagramas `topology-*.png` de cada lab saem de [`diagrams/sr_ti-lfa.drawio.drawio`](./diagrams/sr_ti-lfa.drawio.drawio), uma página por cenário. Editar lá e reexportar.
 
 ## O que é
 
@@ -101,7 +101,7 @@ Três coisas que confundem:
 
 Limite da plataforma: o IOS-XR programa caminhos microloop-avoidant de até 3 labels, incluindo o do destino. Acima disso, não instala.
 
-Lab: [`microloop-avoidance`](./microloop-avoidance/microloop-avoidance.md).
+Lab: [`microloop-avoidance`](./04-microloop-avoidance/microloop-avoidance.md).
 
 ## Referências
 

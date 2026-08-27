@@ -6,15 +6,7 @@
 - **Planejado** - no escopo do projeto, sem lab ainda.
 - **Em andamento (branch separada)** - em desenvolvimento por outra pessoa em outra branch, ainda não mergeado em `main`. Listado aqui para reservar o lugar e evitar retrabalho de estrutura quando mergear.
 
-Para instalar o ambiente, ver [`setup.md`](./setup.md). Para os conceitos e convenções, [`base.md`](./base.md). Índice de labs com descrição curta, [`cisco-sr.md`](./cisco-sr.md).
-
-## Por onde começar
-
-1. [`base.md`](./base.md) - conceitos, convenções, topologia de referência.
-2. [`setup.md`](./setup.md) - Docker, Containerlab, imagem XRd.
-3. TI-LFA, nesta ordem: zero-segment, single-segment, double-segment, node-srlg-protection, microloop-avoidance. Cada lab assume o anterior. Ler [`concepts.md`](./SR-MPLS/TI-LFA/concepts.md) antes do primeiro.
-4. SR-TE: [`explicit-policy`](./SR-MPLS/SR-TE/explicit-policy/explicit-policy.md), independente da trilha de TI-LFA. Conceitos em [`concepts.md`](./SR-MPLS/SR-TE/concepts.md).
-5. Demais categorias abaixo, conforme forem saindo do papel.
+Para instruções de instalação e a lista dos labs prontos hoje, ver o [`README.md`](../README.md) na raiz de `Labs/Cisco/`. Este arquivo cobre o quadro completo, incluindo o que ainda não existe.
 
 ## Fundamentos SR-MPLS
 
@@ -28,13 +20,13 @@ Para instalar o ambiente, ver [`setup.md`](./setup.md). Para os conceitos e conv
 
 | Cenário | Status | Onde |
 |---|---|---|
-| Zero-segment (PQ-node vizinho direto do PLR) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/zero-segment/` |
-| Single-segment (PQ-node via P-space estendido) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/single-segment/` |
-| Double-segment (P-node mais Adj-SID até o Q-node) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/double-segment/` |
-| Node protection (tiebreaker) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/node-srlg-protection/` |
-| SRLG protection (tiebreaker e grupos) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/node-srlg-protection/` |
-| Microloop avoidance (reconvergência pós-FRR) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/microloop-avoidance/` |
-| LFA e Remote LFA (contexto histórico, pré-TI-LFA) | Concluído (conceitual, sem lab próprio) | `concepts.md` e `zero-segment.md` |
+| Zero-segment (PQ-node vizinho direto do PLR) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/00-zero-segment/` |
+| Single-segment (PQ-node via P-space estendido) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/01-single-segment/` |
+| Double-segment (P-node mais Adj-SID até o Q-node) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/02-double-segment/` |
+| Node protection (tiebreaker) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/03-node-srlg-protection/` |
+| SRLG protection (tiebreaker e grupos) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/03-node-srlg-protection/` |
+| Microloop avoidance (reconvergência pós-FRR) | Concluído | `Labs/Cisco/SR-MPLS/TI-LFA/04-microloop-avoidance/` |
+| LFA e Remote LFA (contexto histórico, pré-TI-LFA) | Concluído (conceitual, sem lab próprio) | `concepts.md` e `00-zero-segment/zero-segment.md` |
 | TI-LFA sobre IS-IS | Planejado | - |
 
 ## SR-TE / SR Policy
@@ -43,7 +35,7 @@ Para instalar o ambiente, ver [`setup.md`](./setup.md). Para os conceitos e conv
 |---|---|---|
 | Explicit policy (segment list estática, waypoints) | Concluído | `Labs/Cisco/SR-MPLS/SR-TE/explicit-policy/` |
 | ODN (On-Demand Nexthop) | Planejado | - |
-| Automated Steering por Color BGP | Planejado | citado em `SR-MPLS/SR-TE/concepts.md`, sem lab |
+| Automated Steering por Color BGP | Planejado | citado em `SR-MPLS/SR-TE/sr-te_concepts.md`, sem lab |
 | Dynamic path via SR-PCE / BGP-LS | Planejado | requer controller externo, fora do escopo XRd-only atual |
 | Policy stitching / binding-SID recursivo | Planejado | - |
 | Weighted ECMP entre candidate paths | Planejado | - |

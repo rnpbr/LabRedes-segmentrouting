@@ -1,6 +1,6 @@
 # SR-TE: Explicit Policy sobre a Rede Ipê
 
-> Pré-requisito: [`base.md`](../../../base.md) e [`setup.md`](../../../setup.md).
+> Pré-requisito: [`base.md`](../../../docs/base.md) e [`setup.md`](../../../docs/setup.md).
 
 ## O que este lab demonstra
 
@@ -74,7 +74,7 @@ sudo clab destroy -t explicit-policy.clab.yml --cleanup
 
 ## A policy, em detalhe
 
-Trecho relevante de `configs/pop-ce.cfg` (o resto é base SR-MPLS padrão, ver [`base.md`](../../../base.md)):
+Trecho relevante de `configs/pop-ce.cfg` (o resto é base SR-MPLS padrão, ver [`base.md`](../../../docs/base.md)):
 
 ```text
 segment-routing
