@@ -7,7 +7,7 @@ O que precisa estar instalado antes do primeiro `clab deploy`. Conceitos ficam e
 - Linux, bare-metal ou VM com virtualização aninhada.
 - Docker Engine.
 - Containerlab.
-- RAM: cerca de 1,5 GB por nó. Os labs têm de 4 a 6 nós, então reserve de 6 a 12 GB.
+- RAM: cerca de 1,5 GB por nó XRd. Os labs têm de 4 a 8 roteadores, então reserve de 6 a 12 GB. O `bgp-lu` é o maior: 8 roteadores mais 2 contêineres Alpine, ~12 GB e oito CPUs.
 - Limites de `inotify` aumentados (ver abaixo).
 
 ## Docker e Containerlab
@@ -92,7 +92,7 @@ cd ~/labs/<categoria>/<lab>
 sudo clab deploy -t <lab>.clab.yml
 ```
 
-`<categoria>` é `ti-lfa` ou `sr-te` (minúsculo, é a pasta em `IaC/Clabs/Cisco/`). `<CATEGORIA>` é `TI-LFA` ou `SR-TE` (maiúsculo, é a pasta em `Labs/Cisco/SR-MPLS/`). Cada lab documenta os nomes exatos na própria seção de Deploy.
+`<categoria>` é `ti-lfa`, `sr-te` ou `inter-as` (minúsculo, é a pasta em `IaC/Clabs/Cisco/`). `<CATEGORIA>` é `TI-LFA`, `SR-TE` ou `Inter-AS` (é a pasta em `Labs/Cisco/SR-MPLS/`). Cada lab documenta os nomes exatos na própria seção de Deploy.
 
 Acesso: `ssh clab@<ip>`, senha `clab@123`. Cada lab documenta os IPs. Alternativa sem SSH:
 
@@ -167,6 +167,8 @@ No markdown, o texto alternativo descreve o comando:
 ```
 
 Os diagramas saem dos `.drawio` em `SR-MPLS/TI-LFA/diagrams/` e `SR-MPLS/SR-TE/diagrams/`. Editar lá e reexportar.
+
+Capturas de terminal são sempre `.png`. Diagramas podem ser `.svg`: é o caso do `bgp-lu`, cujas figuras têm variante clara e escura (`<nome>.svg` e `<nome>-escuro.svg`) servidas por `<picture>`/`prefers-color-scheme`, para continuarem legíveis no tema escuro do GitHub.
 
 ## Problemas comuns
 

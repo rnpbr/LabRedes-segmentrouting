@@ -14,7 +14,7 @@ Para instruções de instalação e a lista dos labs prontos hoje, ver o [`READM
 |---|---|---|
 | Prefix-SID e node-SID, SRGB e SRLB, OSPFv2 com extensões SR | Concluído | [`base.md`](./base.md) |
 | Mesmo fundamento sobre IS-IS em vez de OSPFv2 | Planejado | - |
-| BGP-LU (RFC 8277) para estender alcance MPLS além do IGP | Planejado | citado no glossário de `base.md`, sem lab |
+| BGP-LU (RFC 8277) para estender alcance MPLS além do IGP | Concluído | `Labs/Cisco/SR-MPLS/Inter-AS/bgp-lu/` |
 
 ## TI-LFA / Fast Reroute
 
@@ -59,7 +59,11 @@ Para instruções de instalação e a lista dos labs prontos hoje, ver o [`READM
 | Cenário | Status | Onde |
 |---|---|---|
 | OSPF multi-processo com DBRs compartilhados e Flex-Algo anycast | Em andamento (branch separada) | `feature/multidomain-ospf` |
-| Seamless MPLS / BGP-LU interdomínio | Planejado | - |
+| Seamless MPLS / BGP-LU interdomínio | Concluído | `Labs/Cisco/SR-MPLS/Inter-AS/bgp-lu/` |
+| Transporte inter-AS estilo Option C (sem a camada VPN) | Concluído | `Labs/Cisco/SR-MPLS/Inter-AS/bgp-lu/` |
+| L3VPN inter-AS Option C completa (VPNv4/vpnv6, VRF, RD/RT) | Planejado | o lab `bgp-lu` implementa só o substrato de transporte |
+| BGP-EPE com PeerNode SID em SR Policy | Concluído | `Labs/Cisco/SR-MPLS/Inter-AS/bgp-lu/` |
+| BGP-EPE centralizado (controlador + BGP-LS, RFC 9087) | Planejado | requer controller externo, fora do escopo XRd-only atual |
 | SR-PCE com visão de topologia interdomínio | Planejado | - |
 
 O lab de multi-domínio em desenvolvimento é de outra pessoa. Quando mergear, entra em `Labs/Cisco/SR-MPLS/Multidominio-OSPF/` com o `.clab.yml` em `IaC/Clabs/Cisco/Multidominio-OSPF/`, seguindo o mesmo padrão dos demais.
