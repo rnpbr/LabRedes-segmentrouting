@@ -41,11 +41,13 @@ O custo precisa estar nos dois lados porque o OSPF usa o custo da interface de s
 
 O projeto usa dois esquemas:
 
-| | Referência e SR-TE | Labs de TI-LFA |
+| | Referência, SR-TE e Inter-AS | Labs de TI-LFA |
 |---|---|---|
 | Loopbacks | `10.0.0.0/24`, host = ID do nó | `10.0.1.248` a `10.0.1.254` |
 | Enlaces | `192.0.2.0/24`, `/31` | `10.10.<a><b>.0/30` |
-| Onde aparece | topologia desta página, `explicit-policy` | os cinco labs de TI-LFA |
+| Onde aparece | topologia desta página, `explicit-policy`, `bgp-lu` | os cinco labs de TI-LFA |
+
+O lab `bgp-lu` acrescenta `198.51.100.0/24` e `203.0.113.0/24` para as redes de cliente. Os três blocos - com o `192.0.2.0/24` - são reservados pela RFC 5737.
 
 O `192.0.2.0/24` é reservado pela RFC 5737 para documentação: serve em lab, não em produção. Os labs de TI-LFA usam `10.10.<origem><destino>.0/30` porque assim dá para ler o enlace direto na saída de um `traceroute`, sem consultar tabela.
 
@@ -61,7 +63,7 @@ O `192.0.2.0/24` é reservado pela RFC 5737 para documentação: serve em lab, n
 | PR | `10.0.1.249/32` | 6 | `16006` |
 | BA | `10.0.1.248/32` | 7 | `16007` |
 
-Cada lab sobe só os PoPs que precisa. A rede de gerência muda por lab (`172.20.20.0/24` no SR-TE, `172.20.21` a `172.20.25` nos de TI-LFA), então dá para rodar mais de um ao mesmo tempo.
+Cada lab sobe só os PoPs que precisa. A rede de gerência muda por lab (`172.20.20.0/24` no SR-TE, `172.20.21` a `172.20.25` nos de TI-LFA, `172.20.26.0/24` no Inter-AS), então dá para rodar mais de um ao mesmo tempo.
 
 ## Topologia de referência
 
@@ -169,7 +171,9 @@ A partir de qualquer nó.
 
 **Affinity.** Cor administrativa de um link, usada por Flex-Algo e SR-TE para incluir ou excluir links.
 
-**BGP-LU (RFC 8277).** BGP carregando prefixo com label MPLS. Estende alcance MPLS entre domínios.
+**BGP-LU (RFC 8277).** BGP carregando prefixo com label MPLS. Estende alcance MPLS entre domínios. Ver `SR-MPLS/Inter-AS/inter-as_concepts.md`.
+
+**BGP-EPE.** Egress Peer Engineering: SID por peer BGP no ASBR de saída, para dirigir tráfego a um peer específico. Ver `SR-MPLS/Inter-AS/inter-as_concepts.md`.
 
 **Binding-SID.** Label que representa uma SR Policy inteira.
 
