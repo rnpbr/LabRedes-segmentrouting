@@ -1,0 +1,68 @@
+# TI-LFA Double-Segment
+#
+# Deploy:
+#   sudo clab deploy -t lab.clab.yml
+#
+# Cada no le seu arquivo de configuracao em configs/<no>.cfg, ao lado deste
+# arquivo. O containerlab entrega o .cfg ao XRd como first-boot.cfg.
+#
+# Repositorio: https://github.com/rnpbr/LabRedes-segmentrouting.git
+#
+# Para servir os .cfg direto do GitHub em vez de copiar configs/ para o disco,
+# troque o caminho de cada no por uma URL raw:
+#   startup-config: https://raw.githubusercontent.com/rnpbr/LabRedes-segmentrouting/main/labs/cisco/sr-mpls/ti-lfa/02-double-segment/configs/sp.cfg
+# Ref: https://containerlab.dev/manual/config-mgmt/#remote
+#
+# enforce-startup-config faz todo deploy reaplicar o .cfg, em vez de reusar a
+# config gravada por uma execucao anterior.
+
+name: tilfa-double-segment
+
+mgmt:
+  network: tilfa-double-segment-mgmt
+  ipv4-subnet: 172.20.23.0/24
+
+topology:
+  defaults:
+    kind: cisco_xrd
+
+  kinds:
+    cisco_xrd:
+      image: ios-xr/xrd-control-plane:7.10.2
+      enforce-startup-config: true
+      # para habilitar, o caminho do startup-config deve ser válido. Avaliando import de configs via URL, mas ainda nao definido.
+
+  nodes:
+    sp:
+      mgmt-ipv4: 172.20.23.11
+      startup-config: configs/sp.cfg
+    df:
+      mgmt-ipv4: 172.20.23.12
+
+      startup-config: configs/df.cfg
+    rj:
+      mgmt-ipv4: 172.20.23.13
+      startup-config: configs/rj.cfg
+    es:
+      mgmt-ipv4: 172.20.23.14
+      startup-config: configs/es.cfg
+    mg:
+      mgmt-ipv4: 172.20.23.15
+      startup-config: configs/mg.cfg
+    ba:
+      mgmt-ipv4: 172.20.23.17
+      startup-config: configs/ba.cfg
+
+  links:
+    # SP-DF: enlace protegido, custo 10
+    - endpoints: ["sp:Gi0-0-0-0", "df:Gi0-0-0-0"]
+    # SP-RJ: custo 10
+    - endpoints: ["sp:Gi0-0-0-1", "rj:Gi0-0-0-0"]
+    # RJ-MG: custo 10
+    - endpoints: ["rj:Gi0-0-0-1", "mg:Gi0-0-0-0"]
+    # MG-BA: custo 1000 - e o que quebra a intersecao P-space/Q-space
+    - endpoints: ["mg:Gi0-0-0-1", "ba:Gi0-0-0-1"]
+    # BA-DF: custo 10
+    - endpoints: ["ba:Gi0-0-0-0", "df:Gi0-0-0-2"]
+    # DF-ES: pendant ES, destino observado
+    - endpoints: ["df:Gi0-0-0-1", "es:Gi0-0-0-0"]
