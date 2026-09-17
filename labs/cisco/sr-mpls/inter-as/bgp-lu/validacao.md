@@ -27,8 +27,11 @@ Uma verificação em um nível não é promovida automaticamente ao seguinte.
 > estava marcada como `xrd-control-plane:7.10.2` e os nós não tinham o bloco base
 > do kind `cisco_xrd` nem endereços de gerência fixos. Os nomes de contêiner nas
 > saídas originais seguiam o prefixo `clab-ipe-sr-interas-`. A configuração de
-> roteamento - interfaces, OSPF, SR, BGP, TI-LFA, EPE e SR Policy - é a mesma
-> que está hoje em `configs/`, byte a byte. O que mudou foi o empacotamento.
+> roteamento observada era a base dos arquivos atuais. Depois dessa captura, os
+> startup-configs receberam duas correções de fronteira: rotas estáticas `/32`
+> entre os ASBRs para o binding MPLS exigido pelo IOS XR e filtros de exportação
+> na sessão IPv4 unicast entre os PEs. Portanto, as saídas abaixo registram a
+> execução histórica, mas os arquivos atuais não são mais idênticos byte a byte.
 
 ## Conferência estática
 
@@ -40,6 +43,8 @@ Antes de qualquer deploy, vale conferir à mão:
 - custos OSPF declarados **nos dois lados** de cada enlace;
 - as três sessões LU, a sessão de serviço, o EPE e a lista de segmentos
   presentes nos `.cfg` corretos;
+- uma rota estática `/32` em cada ASBR para o endereço do peer na fronteira;
+- a exportação IPv4 unicast dos PEs restrita à respectiva rede de cliente;
 - ausência de LDP, RSVP, VPNv4 e L2VPN;
 - toda referência de imagem no markdown resolvendo para um arquivo em `images/`.
 

@@ -257,7 +257,26 @@ entre os domínios - é exatamente o problema que o estágio 3 resolve.
 
 Entra: `prefix-set LU_LOOPBACKS`, `route-policy LU_ONLY`, `router bgp` com
 `allocate-label all`, as três sessões LU, `next-hop-self` nos ASBRs em direção
-aos PEs, e `mpls static` na interface de fronteira dos ASBRs.
+aos PEs, `mpls static` na interface de fronteira e uma rota estática `/32` para
+o endereço de fronteira do ASBR oposto:
+
+```text
+! asbr-pop-pb
+router static
+ address-family ipv4 unicast
+  192.0.2.9/32 GigabitEthernet0/0/0/2
+
+! asbr-ipe-pb
+router static
+ address-family ipv4 unicast
+  192.0.2.8/32 GigabitEthernet0/0/0/2
+```
+
+O IOS XR precisa dessa rota host na fronteira Inter-AS para vincular o label
+MPLS a um FEC `/32`. Sem ela, a sessão BGP-LU pode ficar operacional e trocar
+labels enquanto o tráfego rotulado não é encaminhado. Esse comportamento e a
+rota estática requerida no ASBR IOS XR são descritos pela Cisco em
+[Configure Inter-AS Option C MPLS VPN With Cisco IOS and Cisco IOS-XR](https://www.cisco.com/c/en/us/support/docs/multiprotocol-label-switching-mpls/mpls/200523-Configuration-and-Verification-of-Layer.html).
 
 Em `pe-pop-pb`:
 
@@ -267,12 +286,15 @@ show bgp ipv4 labeled-unicast 10.0.0.8/32
 show cef 10.0.0.8/32 detail
 ```
 
-Em `asbr-pop-pb`:
+Em cada ASBR:
 
 ```text
 show bgp ipv4 labeled-unicast summary
+show route 192.0.2.9/32
 show mpls forwarding
 ```
+
+Em `asbr-ipe-pb`, consulte `192.0.2.8/32` no segundo comando.
 
 Aceite: as três sessões LU `Established`; a rota remota válida, best e com
 label; o CEF de `pe-pop-pb` recursando pelo next hop `10.0.0.4`; a imposição
@@ -281,8 +303,12 @@ incluindo `16004` mais um label BGP; entrada de LFIB correspondente no ASBR;
 
 ### Estágio 4 - sobreposição de serviço
 
-Entra: eBGP IPv4 unicast multihop `pe-pop-pb`-`pe-ipe-ce`, `route-policy PASS`,
-e o `network` das redes de cliente.
+Entra: eBGP IPv4 unicast multihop `pe-pop-pb`-`pe-ipe-ce`, o `network` das
+redes de cliente e `route-policy PE_UNICAST_EXPORT_ONLY` na saída de cada PE.
+O filtro anuncia somente `198.51.100.0/24` de `pe-pop-pb` e somente
+`203.0.113.0/24` de `pe-ipe-ce`. As loopbacks continuam na AF unicast local
+para receber um binding de label, mas não vazam pela sessão de serviço
+AFI 1/SAFI 1; entre domínios elas são transportadas apenas por BGP-LU.
 
 ```text
 show bgp ipv4 unicast summary
@@ -483,6 +509,7 @@ referência efetivamente observou está em [`validacao.md`](./validacao.md).
 - RFC 9256 - *Segment Routing Policy Architecture*: <https://www.rfc-editor.org/rfc/rfc9256.html>
 - RFC 9855 - *Topology Independent Fast Reroute Using Segment Routing*: <https://www.rfc-editor.org/rfc/rfc9855.html>
 - RFC 4364 seção 10 - contexto das opções inter-AS: <https://www.rfc-editor.org/rfc/rfc4364.html>
+- Cisco - [Configure Inter-AS Option C MPLS VPN With Cisco IOS and Cisco IOS-XR](https://www.cisco.com/c/en/us/support/docs/multiprotocol-label-switching-mpls/mpls/200523-Configuration-and-Verification-of-Layer.html)
 - [Containerlab - Cisco XRd kind](https://containerlab.dev/manual/kinds/xrd/)
 
 Lista completa das fontes, incluindo as do recorte público, em

@@ -1710,13 +1710,25 @@ cria o ponto de recursão intradomínio e exige um binding local correspondente.
 Nos ASBRs:
 
 ```text
+! asbr-pop-pb
+router static
+ address-family ipv4 unicast
+  192.0.2.9/32 GigabitEthernet0/0/0/2
+
 mpls static
  interface GigabitEthernet0/0/0/2
 ```
 
 Esse bloco habilita o contexto de encaminhamento MPLS na interface de fronteira
 usada pela LFIB. Ele não fixa o valor dos labels LU; esses bindings continuam
-dinâmicos e vêm do BGP.
+dinâmicos e vêm do BGP. No `asbr-ipe-pb`, a rota simétrica é
+`192.0.2.8/32 GigabitEthernet0/0/0/2`.
+
+A rota host é necessária no IOS XR para que o label recebido na fronteira
+Inter-AS seja vinculado a um FEC `/32`. Sem esse binding, o controle BGP-LU
+pode subir normalmente sem que o data plane encaminhe os pacotes rotulados.
+A exigência é documentada pela Cisco em
+[Configure Inter-AS Option C MPLS VPN With Cisco IOS and Cisco IOS-XR](https://www.cisco.com/c/en/us/support/docs/multiprotocol-label-switching-mpls/mpls/200523-Configuration-and-Verification-of-Layer.html).
 
 ### 14.7 EPE
 
@@ -1849,12 +1861,15 @@ estabelecida antes de label/best path/CEF estabilizarem.
 Estado pretendido:
 
 - eBGP IPv4 unicast entre os PEs;
-- anúncio das duas redes de cliente;
+- anúncio de uma rede de cliente em cada sentido;
+- filtro de exportação que impede as loopbacks de vazarem na AF unicast;
 - ainda sem steering por color.
 
 No estágio 4, o renderer aplica `route-policy PASS in`; a policy `COLOR_100` só
-é definida e referenciada no estágio 6. A checagem estática rejeita snapshots
-que referenciem uma route-policy ainda não definida.
+é definida e referenciada no estágio 6. Na saída, cada PE aplica
+`PE_UNICAST_EXPORT_ONLY`: `pe-pop-pb` exporta apenas `198.51.100.0/24` e
+`pe-ipe-ce` apenas `203.0.113.0/24`. A checagem estática rejeita snapshots que
+referenciem uma route-policy ainda não definida.
 
 Na execução final de referência, a sessão ficou `Established`, trocou um prefixo
 em cada sentido e encaminhou tráfego entre os clientes.
@@ -2245,6 +2260,16 @@ show mpls forwarding labels SID detail
 ```
 
 Se o next hop não tiver transporte, o label BGP isolado não resolve a rota.
+
+Nos ASBRs, confirme também a rota host para o peer da fronteira:
+
+```text
+show route 192.0.2.9/32 detail   ! asbr-pop-pb
+show route 192.0.2.8/32 detail   ! asbr-ipe-pb
+```
+
+Uma sessão BGP-LU `Established` sem essa rota `/32` não prova encaminhamento
+MPLS na fronteira.
 
 ### Sintoma: o CEF mostra `{16004, 16008}`, mas o tráfego falha
 
