@@ -64,7 +64,7 @@ assimétrico e a análise de ramo primário/alternativo deixa de valer.
 | OSPF `FULL` nos oito XRd | aprovado |
 | Prefix-SIDs e LFIB | aprovado |
 | três sessões BGP-LU | aprovado |
-| redistribuição OSPF→BGP dos startup-configs atuais | estática aprovada; runtime pendente após redeploy |
+| redistribuição OSPF→BGP dos startup-configs atuais | aprovado |
 | recursão LU em `pe-pop-pb` | aprovado |
 | filtro LU restrito às loopbacks | aprovado |
 | repair path TI-LFA | aprovado, resolvido como `Local-LFA` |
