@@ -387,7 +387,7 @@ O PeerNode SID de índice 100 resulta em:
 Esse 15100 só é uma instrução EPE no ASBR que o programou. No
 `asbr-pop-pb`, significa “retire este label e envie ao peer `192.0.2.9`”.
 
-#### Labels observados e dinâmicos
+#### Labels observados, indexados e dinâmicos
 
 O IOS XR aloca labels fora da SRGB/SRLB para vários clientes do plano MPLS:
 
@@ -405,16 +405,19 @@ qual é o campo ou owner?
 ele é label de entrada ou de saída?
 ```
 
-Na captura atual:
+Na captura de referência:
 
-- `16008` é o label LU local e recebido ao longo da cadeia para
-  `10.0.0.8/32`, coincidindo com o Prefix-SID indexado do PE remoto;
+- `16008` é o Prefix-SID indexado do PE remoto, importado da rota OSPF/SR para
+  o BGP-LU e preservado ao longo da cadeia; não é uma alocação dinâmica que
+  coincidiu com o SID;
 - `24005` é o Binding SID dinâmico da policy no `pe-pop-pb`;
 - `24005` também aparece como label EPE de adjacência no `asbr-pop-pb`, em
   outro roteador e contexto;
 - `24000` a `24003` no `asbr-pop-pb` são Adj-SIDs SR.
 
-Não existe conflito porque o contexto local e a direção são diferentes.
+Não existe conflito porque o contexto local e a direção são diferentes. A
+SRGB ocupa `16000-23999`; os labels dinâmicos desta execução começam em
+`24000`.
 
 ### 4.3 O contrato downstream
 
@@ -765,7 +768,8 @@ Se N1 for diretamente conectado, o “túnel” pode ser apenas a adjacência L2
 Se N1 for uma loopback distante, o túnel pode ser o transporte SR, adicionando
 um Node-SID acima de L1.
 
-Esse comportamento é exatamente o que costura os dois domínios deste lab.
+Esse comportamento costura o ASBR do PoP ao PE local. No ASBR do backbone, a
+continuidade final usa diretamente o Prefix-SID já instalado pelo OSPF/SR.
 
 ### 7.5 Origem local no IOS XR do lab
 
@@ -785,7 +789,43 @@ loopback conectada satisfaz essa condição para `10.0.0.8/32`.
 `allocate-label all` permite ao BGP alocar bindings locais. A route-policy de
 saída da sessão LU determina o que realmente pode ser anunciado.
 
-### 7.6 O filtro LU
+### 7.6 Importação da rota OSPF/SR no ASBR
+
+O anúncio do PE por iBGP-LU e a rota OSPF/SR descrevem o mesmo `/32`, mas não
+têm o mesmo efeito no encaminhamento do ASBR. O OSPF vence a seleção da RIB
+global e instala o Prefix-SID; apenas alocar outro label no BGP não garante uma
+segunda entrada LFIB para a mesma FEC.
+
+Cada ASBR importa somente a loopback rotulada de seu PE local:
+
+```text
+prefix-set LOCAL_PE_LOOPBACK
+ 10.0.0.8/32
+end-set
+
+route-policy OSPF_TO_BGP_LU
+ if destination in LOCAL_PE_LOOPBACK and route-has-label then
+  pass
+ else
+  drop
+ endif
+end-policy
+
+router bgp 1916
+ address-family ipv4 unicast
+  redistribute ospf 1 match internal route-policy OSPF_TO_BGP_LU
+```
+
+No AS 65001, a policy equivalente contém `10.0.0.1/32`. O filtro local evita
+realimentação caso a loopback remota venha a aparecer no OSPF no futuro;
+`route-has-label` impede exportar uma rota IP que perdeu seu binding SR.
+
+Dentro do BGP do ASBR, a rota redistribuída localmente vence a cópia recebida
+por iBGP. Seu label é o Prefix-SID já programado (`16001` ou `16008`), portanto
+o label anunciado ao peer eBGP também é uma chave de entrada válida na LFIB do
+ASBR anunciante.
+
+### 7.7 O filtro LU
 
 ```text
 prefix-set LU_LOOPBACKS
@@ -816,9 +856,9 @@ Esta seção acompanha `10.0.0.8/32` do PE remoto ao PE local.
 
 ### 8.1 Nomes simbólicos
 
-Labels dinâmicos mudam entre boots. Para entender a cadeia, use símbolos:
+Para entender a cadeia sem confundir papéis locais, use símbolos:
 
-- `L-CE`: binding que `pe-ipe-ce` entrega a `asbr-ipe-pb`;
+- `S-CE`: Prefix-SID de `pe-ipe-ce`, `16008`;
 - `L-IPE`: binding que `asbr-ipe-pb` entrega a `asbr-pop-pb`;
 - `L-POP`: binding que `asbr-pop-pb` entrega a `pe-pop-pb`;
 - `L-ING`: label local que o próprio `pe-pop-pb` associa à rota.
@@ -826,41 +866,42 @@ Labels dinâmicos mudam entre boots. Para entender a cadeia, use símbolos:
 Na execução registrada:
 
 ```text
+S-CE  = 16008
 L-POP = 16008
 L-IPE = 16008
 L-ING = 16008
-L-CE  = não capturado
 ```
 
-A igualdade observada acompanha o label indexado da rota SR do PE remoto. Os
-papéis continuam distintos porque cada label é interpretado localmente.
+A igualdade não é acidental. `asbr-ipe-pb` importa a rota OSPF/SR rotulada e
+anuncia seu Prefix-SID por BGP-LU. Os papéis continuam distintos porque cada
+label é interpretado na LFIB do roteador que o recebe.
 
-### 8.2 Passo 1 — `pe-ipe-ce` origina
+### 8.2 Passo 1 — OSPF/SR e iBGP anunciam a loopback
 
-O PE possui `10.0.0.8/32` em Loopback0 e o origina no BGP. Para o vizinho iBGP
-`10.0.0.5`, anuncia:
-
-```text
-NLRI:     10.0.0.8/32
-next hop: 10.0.0.8
-label:    L-CE ou implicit-null, conforme a programação
-AS path:  vazio dentro do AS de origem
-```
-
-O valor exato desse anúncio não foi capturado na evidência versionada.
-
-### 8.3 Passo 2 — `asbr-ipe-pb` aprende por iBGP
-
-O ASBR resolve `10.0.0.8` no OSPF/SR do AS 1916:
+`pe-ipe-ce` anuncia `10.0.0.8/32` no OSPF com Prefix-SID `16008`. O ASBR instala:
 
 ```text
 10.0.0.8/32
   → via p-ipe-rn
-  → Prefix-SID 16008
+  → local label 16008
 ```
 
-O CEF capturado confirma 16008, primário por `192.0.2.11` e backup por
-`192.0.2.13`.
+O PE também origina o `/32` no BGP e o envia por iBGP-LU, normalmente com
+implicit-null para a própria loopback. Essa cópia continua visível no BGP do
+ASBR, mas não é a rota usada para originar o anúncio inter-AS depois da
+redistribuição.
+
+### 8.3 Passo 2 — `asbr-ipe-pb` importa a rota OSPF/SR
+
+`OSPF_TO_BGP_LU` admite somente `10.0.0.8/32` e exige que a rota tenha label.
+O BGP cria uma rota local redistribuída, que vence a cópia recebida por iBGP e
+preserva o binding instalado:
+
+```text
+prefixo:     10.0.0.8/32
+origem:      OSPF interno redistribuído
+local label: S-CE = 16008
+```
 
 Ao anunciar a rota para o AS 65001, o eBGP muda o next hop para o endereço da
 fronteira do próprio ASBR:
@@ -868,20 +909,12 @@ fronteira do próprio ASBR:
 ```text
 NLRI:     10.0.0.8/32
 next hop: 192.0.2.9
-label:    L-IPE
+label:    L-IPE = 16008
 AS path:  1916
 ```
 
-Para honrar esse novo binding, o `asbr-ipe-pb` precisa programar logicamente:
-
-```text
-entrada L-IPE
-  → substituir pelo binding L-CE, se necessário
-  → transportar até 10.0.0.8 usando SID 16008
-```
-
-Se o PE anunciou implicit-null, a pilha para o segundo domínio pode conter
-somente 16008 sobre o pacote IP.
+Esse anúncio é seguro porque `16008` já possui ação na LFIB do ASBR: encaminhar
+o Prefix-SID pelo domínio SR até `pe-ipe-ce`.
 
 ### 8.4 Passo 3 — `asbr-pop-pb` aprende por eBGP
 
@@ -952,7 +985,8 @@ Interpretação:
 
 - `16008` recebido é `L-POP`, o valor que o PE impõe ao enviar ao ASBR;
 - o `Local Label` 16008 é `L-ING`, um binding local no PE;
-- a igualdade dos valores não torna os objetos globais;
+- a igualdade acompanha o binding SR importado na origem, mas não torna os
+  objetos globais;
 - o next hop BGP `10.0.0.4` ainda precisa de resolução.
 
 ### 8.6 Passo 5 — recursão no CEF
@@ -1063,22 +1097,14 @@ Entrada:
 topo L-IPE
 ```
 
-Ação lógica definida pelo binding LU:
+Ação definida pela LFIB do Prefix-SID importado para o BGP-LU:
 
 ```text
-substituir L-IPE pelo binding recebido de pe-ipe-ce
-tunelar o resultado até 10.0.0.8
+L-IPE = 16008
+encaminhar pelo caminho SR até 10.0.0.8
 ```
 
-O túnel intradomínio usa 16008.
-
-Saída possível:
-
-```text
-{16008, L-CE, IPv4}
-```
-
-ou, se `L-CE` for implicit-null:
+Saída:
 
 ```text
 {16008, IPv4}
@@ -1095,13 +1121,11 @@ pop 16008
 send pe-ipe-ce
 ```
 
-Se houver `L-CE`, ele passa a ser o topo. Se o PE pediu implicit-null, o pacote
-sai como IPv4.
+Depois do PHP, o pacote sai como IPv4 para o PE.
 
 #### `pe-ipe-ce`
 
-O PE termina o binding local, se houver, e entrega o pacote ao processamento IP
-da própria loopback.
+O PE entrega o pacote ao processamento IP da própria loopback.
 
 ### 9.2 Pilha por enlace
 
@@ -1112,8 +1136,8 @@ Use esta tabela como modelo, não como pcap da imagem Control Plane:
 | PE local → P primário | `{16004, L-POP, IPv4}` |
 | P primário → ASBR local | `{L-POP, IPv4}` |
 | ASBR local → ASBR remoto | `{L-IPE, IPv4}` |
-| ASBR remoto → P primário | `{16008, L-CE, IPv4}` ou `{16008, IPv4}` |
-| P primário → PE remoto | `{L-CE, IPv4}` ou `IPv4` |
+| ASBR remoto → P primário | `{16008, IPv4}` |
+| P primário → PE remoto | `IPv4` após PHP |
 
 Na execução registrada, substitua:
 
@@ -1249,10 +1273,14 @@ No controle, você veria UPDATEs diferentes em cada sessão:
 
 ```text
 PE remoto → ASBR remoto:
-  next hop 10.0.0.8, label L-CE
+  next hop 10.0.0.8, implicit-null ou label local
+  (cópia iBGP, não selecionada para o anúncio inter-AS)
+
+OSPF/SR → BGP no ASBR remoto:
+  prefixo 10.0.0.8/32, local label 16008
 
 ASBR remoto → ASBR local:
-  next hop 192.0.2.9, label L-IPE, AS path 1916
+  next hop 192.0.2.9, label L-IPE = 16008, AS path 1916
 
 ASBR local → PE local:
   next hop 10.0.0.4, label L-POP, AS path 1916
@@ -1687,6 +1715,30 @@ address-family ipv4 unicast
 - permite que o processo mantenha um binding MPLS;
 - não ignora as route-policies da AF LU.
 
+Nos ASBRs, a origem inter-AS vem da rota OSPF/SR instalada:
+
+```text
+prefix-set LOCAL_PE_LOOPBACK
+ 10.0.0.X/32
+end-set
+
+route-policy OSPF_TO_BGP_LU
+ if destination in LOCAL_PE_LOOPBACK and route-has-label then
+  pass
+ else
+  drop
+ endif
+end-policy
+
+address-family ipv4 unicast
+ redistribute ospf 1 match internal route-policy OSPF_TO_BGP_LU
+ allocate-label all
+```
+
+- importa somente a loopback do PE local;
+- exige que a rota OSPF tenha binding MPLS;
+- faz o anúncio LU usar o Prefix-SID que já possui LFIB no ASBR.
+
 ### 14.5 AF labeled-unicast
 
 ```text
@@ -1720,9 +1772,10 @@ mpls static
 ```
 
 Esse bloco habilita o contexto de encaminhamento MPLS na interface de fronteira
-usada pela LFIB. Ele não fixa o valor dos labels LU; esses bindings continuam
-dinâmicos e vêm do BGP. No `asbr-ipe-pb`, a rota simétrica é
-`192.0.2.8/32 GigabitEthernet0/0/0/2`.
+usada pela LFIB. Ele não fixa o valor dos labels LU. Neste lab, os bindings das
+loopbacks exportadas são os Prefix-SIDs importados do OSPF/SR; outros bindings
+BGP e o Binding SID da SR Policy podem continuar dinâmicos. No `asbr-ipe-pb`,
+a rota simétrica é `192.0.2.8/32 GigabitEthernet0/0/0/2`.
 
 A rota host é necessária no IOS XR para que o label recebido na fronteira
 Inter-AS seja vinculado a um FEC `/32`. Sem esse binding, o controle BGP-LU
@@ -1842,7 +1895,8 @@ Estado introduzido:
 - eBGP-LU entre os ASBRs;
 - `next-hop-self` em direção aos PEs;
 - filtro das loopbacks;
-- bindings dinâmicos.
+- redistribuição OSPF→BGP filtrada para o Prefix-SID do PE local em cada ASBR;
+- continuidade LFIB entre o binding LU e o transporte SR.
 
 Gate completo:
 
@@ -1952,12 +2006,13 @@ show cef 10.0.0.4/32 detail
 
 ```text
 1. sessão AF LU está Established
-2. rota está valid/best/labeled-unicast
-3. Received Label existe
-4. next hop BGP resolve no IGP/SR
-5. CEF impõe {transporte, label recebido}
-6. ASBR tem LFIB para seu label anunciado
-7. prefixos de cliente estão ausentes da LU
+2. rota OSPF/SR do PE local tem Prefix-SID no ASBR de origem
+3. rota OSPF redistribuída é o best path BGP no ASBR de origem
+4. label anunciado pelo ASBR existe em sua LFIB
+5. rota remota está valid/best/labeled-unicast
+6. next hop BGP resolve no IGP/SR
+7. CEF impõe {transporte, label recebido}
+8. prefixos de cliente estão ausentes da LU
 ```
 
 Comandos no PE local:
@@ -1974,7 +2029,8 @@ Comandos no ASBR:
 
 ```text
 show bgp ipv4 labeled-unicast 10.0.0.8/32
-show mpls forwarding
+show route 10.0.0.8/32 detail
+show mpls forwarding labels 16008 detail
 ```
 
 ### Folha de correlação da mesma execução
@@ -1991,9 +2047,11 @@ pilha no CEF:                __________________
 label local no ASBR do PoP:  __________________  deve casar com L-POP
 label de saída no ASBR:      __________________  = L-IPE
 next hop de fronteira:       __________________
+Prefix-SID no ASBR remoto:   __________________  deve casar com L-IPE
 ```
 
-As relações devem casar; os números absolutos podem mudar.
+As relações devem casar. Labels dinâmicos podem mudar; os Prefix-SIDs
+continuam derivados da SRGB e dos índices configurados.
 
 ### Como ler os campos capturados
 
@@ -2180,7 +2238,7 @@ mpls
 Repita em cada enlace e compare o topo:
 
 ```text
-16004 → L-POP → L-IPE → 16008 → IPv4/L-CE
+16004 → L-POP → L-IPE (= 16008) → 16008 → IPv4
 ```
 
 Não espere essa prova na imagem XRd Control Plane usada pelo repositório.
@@ -2229,7 +2287,8 @@ show bgp neighbors ENDERECO detail
 Verifique:
 
 - rota de origem existe na RIB;
-- `network` coincide exatamente;
+- no PE, `network` coincide exatamente;
+- no ASBR de origem, `OSPF_TO_BGP_LU` admite a loopback local rotulada;
 - label foi alocado;
 - `LU_ONLY` permite o `/32`;
 - o vizinho ativou a AF correta;
@@ -2279,8 +2338,8 @@ O CEF do ingresso é apenas o primeiro elo. Verifique:
 LFIB de 16004 nos Ps
 LFIB de L-POP no ASBR local
 MPLS habilitado na fronteira
-LFIB de L-IPE no ASBR remoto
-transporte 16008 no segundo domínio
+LFIB de L-IPE = 16008 no ASBR remoto
+Prefix-SID 16008 até o PE no segundo domínio
 MTU/MPLS no data plane
 disposição final no PE remoto
 ```
@@ -2291,8 +2350,10 @@ foi instalada e que os clientes mantêm as rotas default.
 
 ### Sintoma: números de label mudaram
 
-Isso é esperado para labels dinâmicos. Refaça a folha de correlação da mesma
-execução.
+Isso é esperado para labels dinâmicos, como Adj-SIDs e Binding SIDs. Os
+Prefix-SIDs `16001` e `16008` são derivados da configuração e não devem mudar
+entre boots enquanto a SRGB e os índices permanecerem iguais. Refaça a folha
+de correlação da mesma execução.
 
 Não altere configs para forçar números observados apenas para coincidir com o
 texto.

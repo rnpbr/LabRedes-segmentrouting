@@ -43,6 +43,18 @@ next hop do anúncio. As duas coisas são necessárias - é aí que nasce a recu
 A implementação precisa alocar um label local para os prefixos que origina ou
 repassa nessa família. Sem isso, não há label a anunciar.
 
+Alocação e encaminhamento não são a mesma prova. Se o ASBR aprende o mesmo
+`/32` por iBGP-LU e por um IGP com SR, o IGP pode ser o dono da rota global e
+do Prefix-SID instalado enquanto o BGP aloca outro binding apenas para seu
+próprio caminho. Um label presente no UPDATE, mas ausente da LFIB do ASBR que o
+anunciou, cria um buraco negro.
+
+Uma forma explícita de costurar os planos é importar no BGP somente as
+loopbacks locais já rotuladas pelo IGP. A policy de redistribuição deve ser
+restrita aos `/32` autorizados e pode exigir `route-has-label`. Assim, o ASBR
+anuncia por BGP-LU um Prefix-SID que já possui ação válida na LFIB, sem mudar a
+preferência administrativa entre OSPF e iBGP.
+
 ## Recursão de transporte
 
 O ponto que mais se perde de vista: **uma rota BGP-LU não é encaminhável
@@ -79,6 +91,11 @@ Labels da faixa dinâmica não devem ser fixados em documentação. Correlacione
 saídas **da mesma execução**: BGP contra CEF contra LFIB. Igualdade numérica
 entre labels de contextos diferentes nunca deve ser inferida pelo valor - quem
 define a semântica de um label é o roteador que o recebe.
+
+Um label da SRGB reaproveitado no anúncio BGP-LU não é dinâmico só porque foi
+transportado pelo BGP. Se `16008` é o Prefix-SID derivado de SRGB mais índice e
+o ASBR importa essa rota OSPF/SR, a presença de `16008` na NLRI representa a
+continuidade deliberada desse binding.
 
 ## "Option C": formulação precisa
 

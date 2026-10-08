@@ -28,10 +28,12 @@ Uma verificação em um nível não é promovida automaticamente ao seguinte.
 > do kind `cisco_xrd` nem endereços de gerência fixos. Os nomes de contêiner nas
 > saídas originais seguiam o prefixo `clab-ipe-sr-interas-`. A configuração de
 > roteamento observada era a base dos arquivos atuais. Depois dessa captura, os
-> startup-configs receberam duas correções de fronteira: rotas estáticas `/32`
-> entre os ASBRs para o binding MPLS exigido pelo IOS XR e filtros de exportação
-> na sessão IPv4 unicast entre os PEs. Portanto, as saídas abaixo registram a
-> execução histórica, mas os arquivos atuais não são mais idênticos byte a byte.
+> startup-configs receberam correções de fronteira: rotas estáticas `/32` entre
+> os ASBRs para o binding MPLS exigido pelo IOS XR, filtros de exportação na
+> sessão IPv4 unicast entre os PEs e redistribuição OSPF→BGP estritamente
+> filtrada para a loopback do PE local em cada ASBR. Portanto, as saídas abaixo
+> registram a execução histórica, mas os arquivos atuais não são mais idênticos
+> byte a byte.
 
 ## Conferência estática
 
@@ -43,6 +45,8 @@ Antes de qualquer deploy, vale conferir à mão:
 - custos OSPF declarados **nos dois lados** de cada enlace;
 - as três sessões LU, a sessão de serviço, o EPE e a lista de segmentos
   presentes nos `.cfg` corretos;
+- cada ASBR redistribuindo apenas a rota OSPF interna, rotulada, da loopback de
+  seu PE local para o BGP;
 - uma rota estática `/32` em cada ASBR para o endereço do peer na fronteira;
 - a exportação IPv4 unicast dos PEs restrita à respectiva rede de cliente;
 - ausência de LDP, RSVP, VPNv4 e L2VPN;
@@ -60,6 +64,7 @@ assimétrico e a análise de ramo primário/alternativo deixa de valer.
 | OSPF `FULL` nos oito XRd | aprovado |
 | Prefix-SIDs e LFIB | aprovado |
 | três sessões BGP-LU | aprovado |
+| redistribuição OSPF→BGP dos startup-configs atuais | estática aprovada; runtime pendente após redeploy |
 | recursão LU em `pe-pop-pb` | aprovado |
 | filtro LU restrito às loopbacks | aprovado |
 | repair path TI-LFA | aprovado, resolvido como `Local-LFA` |
@@ -99,16 +104,40 @@ assimétrico e a análise de ramo primário/alternativo deixa de valer.
   extensões ICMP MPLS mostraram a pilha `{16004, 15100, 16007, 16008}` no ramo
   explícito, reduzida um label por etapa até a entrega IP.
 
-## Critério para labels dinâmicos
+## Critério para labels
 
 Labels observados devem ser correlacionados entre saídas da **mesma** execução.
 Os Prefix-SIDs `16001`-`16008` e o PeerNode SID `15100` derivam de índices
 configurados; o Binding SID da policy é dinâmico.
 
-Nesta execução o label LU `16008` coincidiu com o Prefix-SID indexado do PE
-remoto. A igualdade numérica não elimina o contrato downstream: a semântica
-continua sendo determinada pelo roteador que recebe o label e por sua entrada de
-LFIB. Não converta um valor alocado dinamicamente em constante de configuração.
+Nesta execução o label LU `16008` era o Prefix-SID indexado do PE remoto levado
+para o BGP-LU a partir da rota OSPF/SR. Não era um label dinâmico que coincidiu
+por acaso: `16008` pertence à SRGB `16000-23999`, enquanto as alocações
+dinâmicas observadas começam em `24000`. A semântica continua sendo determinada
+pelo roteador que recebe o label e por sua entrada de LFIB.
+
+## Correção de consistência LFIB descoberta em 17 de setembro de 2026
+
+Uma nova execução dos startup-configs anteriores à correção mostrou um estado
+que as sessões BGP, isoladamente, não revelavam:
+
+- `asbr-pop-pb` anunciava `24006` para `10.0.0.1/32`, mas só possuía a entrada
+  SR `16001` na LFIB;
+- `asbr-ipe-pb` anunciava `24005` para `10.0.0.8/32`, mas só possuía a entrada
+  SR `16008` na LFIB;
+- `pe-pop-pb` impunha `{16004, 24005}`, e o ping de `10.0.0.1` para
+  `10.0.0.8` entregou 0 de 3 pacotes.
+
+Em ambos os ASBRs, o BGP havia alocado e anunciado um binding para a cópia
+iBGP da rota, mas o OSPF era o dono da rota global e da ação instalada. A
+correção importa no BGP somente a loopback OSPF/SR rotulada do PE local, usando
+`OSPF_TO_BGP_LU` e `route-has-label`. Assim, o anúncio eBGP usa `16001` ou
+`16008`, que já é uma chave válida da LFIB do ASBR anunciante.
+
+Essa correção está nos startup-configs atuais. A captura histórica acima é
+compatível com o resultado esperado, mas não substitui uma nova validação após
+redeploy. O novo gate exige correlacionar explicitamente o label anunciado com
+`show mpls forwarding labels <label> detail` no ASBR que o anunciou.
 
 ## Tempo de estabilização
 

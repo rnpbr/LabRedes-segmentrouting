@@ -167,7 +167,23 @@ router bgp 65001
    route-policy LU_ONLY out
 
 ! asbr-pop-pb - ASBR
+prefix-set LOCAL_PE_LOOPBACK
+ 10.0.0.1/32
+end-set
+
+route-policy OSPF_TO_BGP_LU
+ if destination in LOCAL_PE_LOOPBACK and route-has-label then
+  pass
+ else
+  drop
+ endif
+end-policy
+
 router bgp 65001
+ address-family ipv4 unicast
+  redistribute ospf 1 match internal route-policy OSPF_TO_BGP_LU
+  allocate-label all
+ !
  neighbor 10.0.0.1
   address-family ipv4 labeled-unicast
    next-hop-self
@@ -181,15 +197,19 @@ router bgp 65001
 
 Para a loopback `10.0.0.8/32`, originada por `pe-ipe-ce`:
 
-1. `pe-pop-pb` aprende o prefixo via BGP-LU com next hop `10.0.0.4`
-   (`asbr-pop-pb`), porque o ASBR aplicou `next-hop-self`.
-2. `10.0.0.4` não é diretamente conectado. O next hop **recursa** na rota
-   OSPF/SR para `asbr-pop-pb`, que é o Node-SID `16004`.
-3. O CEF combina os dois: impõe `{16004, <label BGP>}` e envia por `p-pop-a`.
-4. O domínio do PoP encaminha por SPF até `asbr-pop-pb`, fazendo pop de `16004`
-   (PHP no penúltimo salto).
-5. Em `asbr-pop-pb` só resta o label BGP, que é trocado na fronteira.
-6. O domínio do backbone entrega a `pe-ipe-ce`.
+1. `asbr-ipe-pb` possui a rota OSPF/SR rotulada para o PE, com Prefix-SID
+   `16008`, e a importa no BGP pela policy `OSPF_TO_BGP_LU`.
+2. Essa rota local redistribuída vence, dentro do BGP, a cópia recebida por
+   iBGP do próprio PE. O ASBR anuncia ao peer eBGP o binding já instalado
+   `16008`, em vez de alocar um binding sem entrada correspondente na LFIB.
+3. `asbr-pop-pb` aprende a rota por eBGP, instala a continuidade para o label
+   recebido e a anuncia a `pe-pop-pb` com next hop `10.0.0.4` por causa de
+   `next-hop-self`.
+4. `pe-pop-pb` resolve `10.0.0.4` no OSPF/SR pelo Node-SID `16004`; o CEF
+   combina os dois resultados e impõe `{16004, 16008}` por `p-pop-a`.
+5. Depois do PHP de `16004`, `asbr-pop-pb` encaminha `16008` pela fronteira.
+6. Em `asbr-ipe-pb`, `16008` já é uma chave válida da LFIB SR e continua pelo
+   domínio do backbone até `pe-ipe-ce`.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./images/diagram-pilha-recursiva-escuro.svg">
@@ -200,10 +220,11 @@ Para a loopback `10.0.0.8/32`, originada por `pe-ipe-ce`:
 endereço de fronteira `192.0.2.9`, que não existe em seu OSPF - a rota LU seria
 recebida mas nunca resolveria.
 
-Não fixe em documentação um label da faixa dinâmica. Na execução registrada, o
-label LU recebido para `10.0.0.8/32` foi `16008`, numericamente igual ao
-Prefix-SID do PE remoto. A coincidência não elimina o contrato downstream: quem
-define a semântica de um label é o roteador que o recebe e sua entrada de LFIB.
+O valor `16008` não é uma coincidência com um label dinâmico: ele pertence à
+SRGB e é o Prefix-SID que a redistribuição leva da rota OSPF/SR para o anúncio
+BGP-LU. A semântica continua local em cada salto, mas o ASBR remoto anuncia um
+label que já possui ação válida na própria LFIB. A policy exige
+`route-has-label` para não exportar a loopback se ela perder o binding SR.
 
 ## Progressão em seis estágios
 
@@ -255,10 +276,11 @@ entre os domínios - é exatamente o problema que o estágio 3 resolve.
 
 ### Estágio 3 - transporte BGP labeled-unicast
 
-Entra: `prefix-set LU_LOOPBACKS`, `route-policy LU_ONLY`, `router bgp` com
-`allocate-label all`, as três sessões LU, `next-hop-self` nos ASBRs em direção
-aos PEs, `mpls static` na interface de fronteira e uma rota estática `/32` para
-o endereço de fronteira do ASBR oposto:
+Entra: `prefix-set LU_LOOPBACKS`, `route-policy LU_ONLY`, os prefix-sets
+`LOCAL_PE_LOOPBACK` e as policies `OSPF_TO_BGP_LU` em cada ASBR, `router bgp`
+com redistribuição OSPF interna filtrada e `allocate-label all`, as três sessões
+LU, `next-hop-self` nos ASBRs em direção aos PEs, `mpls static` na interface de
+fronteira e uma rota estática `/32` para o endereço de fronteira do ASBR oposto:
 
 ```text
 ! asbr-pop-pb
@@ -290,16 +312,19 @@ Em cada ASBR:
 
 ```text
 show bgp ipv4 labeled-unicast summary
+show bgp ipv4 labeled-unicast 10.0.0.1/32 detail
+show bgp ipv4 labeled-unicast 10.0.0.8/32 detail
 show route 192.0.2.9/32
 show mpls forwarding
 ```
 
-Em `asbr-ipe-pb`, consulte `192.0.2.8/32` no segundo comando.
+Em `asbr-ipe-pb`, consulte `192.0.2.8/32` na verificação da rota de fronteira.
 
-Aceite: as três sessões LU `Established`; a rota remota válida, best e com
-label; o CEF de `pe-pop-pb` recursando pelo next hop `10.0.0.4`; a imposição
-incluindo `16004` mais um label BGP; entrada de LFIB correspondente no ASBR;
-`198.51.100.0/24` e `203.0.113.0/24` **ausentes** da tabela LU.
+Aceite: as três sessões LU `Established`; em cada ASBR, a rota OSPF redistribuída
+para o PE local é o best path BGP e anuncia o Prefix-SID correspondente
+(`16001` ou `16008`); o CEF de `pe-pop-pb` recursa pelo next hop `10.0.0.4` e
+impõe `{16004, 16008}`; `16008` existe na LFIB de `asbr-ipe-pb`; e
+`198.51.100.0/24` e `203.0.113.0/24` estão **ausentes** da tabela LU.
 
 ### Estágio 4 - sobreposição de serviço
 
@@ -450,6 +475,7 @@ prova tudo.
 | `show bgp ipv4 labeled-unicast summary` | as três sessões LU `Established` |
 | `show bgp ipv4 labeled-unicast 10.0.0.8/32` | rota best, com label e next hop `10.0.0.4` |
 | `show cef 10.0.0.8/32 detail` | pilha `{16004, <label BGP>}` via `p-pop-a` |
+| `show mpls forwarding labels 16008 detail` em `asbr-ipe-pb` | Prefix-SID anunciado por LU tem ação SR até o PE |
 | `show cef 10.0.0.4/32 detail` | backup instalado via `p-pop-b` |
 | `show bgp ipv4 unicast summary` | sessão multihop PE-PE `Established` |
 | `show bgp egress-engineering` | PeerNode SID `15100` no peer `192.0.2.9` (em `asbr-pop-pb`) |
