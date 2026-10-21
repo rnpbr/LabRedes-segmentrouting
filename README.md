@@ -1,68 +1,44 @@
-> Uso interno - material em desenvolvimento.
+# Laboratórios de Segment Routing
 
-# LabRedes - Segment Routing
+Material conceitual e laboratórios reproduzíveis de Segment Routing. O projeto
+separa os conceitos independentes de fabricante das implementações específicas
+de cada plataforma.
 
-Este repositório faz parte do projeto **LabRedes**,  voltada à criação de laboratórios práticos e acessíveis sobre tecnologias de redes.
+> Uso interno, material em desenvolvimento.
 
-O foco é **Segment Routing (SR)** - modelo de encaminhamento que simplifica redes MPLS ao eliminar protocolos de sinalização como RSVP-TE e LDP. O caminho é codificado diretamente no cabeçalho do pacote como um stack de labels, tornando a rede stateless e o headend o único ponto de controle do tráfego.
+## Por onde começar
 
+1. Prepare Docker e Containerlab com o [guia de ambiente](./docs/setup.md).
+2. Leia os [fundamentos de SR-MPLS](./docs/concepts/sr-mpls/README.md).
+3. Prepare a plataforma com o [setup do Cisco XRd](./labs/cisco/setup.md).
+4. Escolha uma trilha no [índice de laboratórios Cisco](./labs/cisco/README.md).
+5. Antes de cada lab, leia o documento conceitual indicado no roteiro.
 
----
+O [roadmap](./docs/roadmap.md) apresenta a cobertura atual e os cenários
+planejados.
 
 ## Estrutura
 
-```
+```text
 LabRedes-segmentrouting/
-├── Labs/                    # roteiros práticos de laboratório
-│   ├── cisco/
-│   ├── huawei/
-│   ├── juniper/
-│   ├── multivendor/
-│   └── nokia/
-│
-└── Docs/                    # documentação e material de consulta
-    ├── references/          # topologias e configs de referência
-    └── base.md              # pré-requisitos e ambiente Cisco
+├── README.md
+├── docs/
+│   ├── README.md
+│   ├── setup.md
+│   ├── roadmap.md
+│   ├── concepts/             # conteúdo independente de fabricante
+│   └── references/           # material de referência externo
+└── labs/
+    └── cisco/
+        ├── README.md
+        ├── setup.md
+        └── sr-mpls/
+            ├── 00-base/
+            ├── ti-lfa/
+            ├── sr-te/
+            └── inter-as/
 ```
 
----
-
-## Labs disponíveis
-
-### Cisco IOS-XR
-
-| # | Lab | Tópico | Status |
-|---|-----|--------|--------|
-| - | - | Em breve | Não iniciado |
-
-### Huawei
-
-| # | Lab | Tópico | Status |
-|---|-----|--------|--------|
-| - | - | Em breve | Não iniciado |
-
-### Juniper
-
-| # | Lab | Tópico | Status |
-|---|-----|--------|--------|
-| - | - | Em breve | Não iniciado |
-
-### Nokia
-
-| # | Lab | Tópico | Status |
-|---|-----|--------|--------|
-| - | - | Em breve | Não iniciado |
-
-### Multivendor
-
-| # | Lab | Tópico | Status |
-|---|-----|--------|--------|
-| - | - | Em breve | Não iniciado |
-
----
-
-## Antes de começar
-
-Leia o guia abaixo para executar os labs:
-
-→ [Docs/base.md](./Docs/base.md)
+Cada laboratório reúne no mesmo diretório o roteiro (`README.md`), a topologia
+Containerlab (`lab.clab.yml`), as configurações dos nós (`configs/`) e as
+imagens usadas na documentação (`images/`).
