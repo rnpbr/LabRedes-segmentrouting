@@ -14,6 +14,7 @@ dependem da sintaxe ou do comportamento de um fabricante específico.
 - [TI-LFA](./concepts/sr-mpls/ti-lfa.md)
 - [SR-TE](./concepts/sr-mpls/sr-te.md)
 - [Inter-AS](./concepts/sr-mpls/inter-as.md)
+- [Multidomínio, Flex-Algo e SID anycast](./concepts/sr-mpls/multidominio.md)
 
 Configurações, comandos de validação, limitações de plataforma e topologias
 executáveis ficam em [`labs/`](../labs/).

@@ -45,7 +45,7 @@ Para a sequência de leitura e os labs disponíveis, consulte o
 | Cenário | Status | Onde |
 |---|---|---|
 | Flex-Algo básico com afinidades e SID por algoritmo | Planejado | - |
-| Flex-Algo com SID anycast de borda entre domínios | Em andamento | `feature/multidomain-ospf` |
+| Flex-Algo com SID anycast de borda entre domínios | Concluído | [flex-algo-anycast](../labs/cisco/sr-mpls/multidominio/flex-algo-anycast/) |
 
 ## SRv6
 
@@ -58,17 +58,13 @@ Para a sequência de leitura e os labs disponíveis, consulte o
 
 | Cenário | Status | Onde |
 |---|---|---|
-| OSPF multiprocesso com DBRs compartilhados e Flex-Algo anycast | Em andamento | `feature/multidomain-ospf` |
+| OSPF multiprocesso com DBRs compartilhados e Flex-Algo anycast | Concluído | [flex-algo-anycast](../labs/cisco/sr-mpls/multidominio/flex-algo-anycast/) |
 | Seamless MPLS / BGP-LU interdomínio | Concluído | [bgp-lu](../labs/cisco/sr-mpls/inter-as/bgp-lu/) |
 | Transporte inter-AS inspirado na Option C, sem a camada VPN | Concluído | [bgp-lu](../labs/cisco/sr-mpls/inter-as/bgp-lu/) |
 | L3VPN inter-AS Option C completa | Planejado | O lab atual implementa apenas o substrato de transporte |
 | BGP-EPE com PeerNode SID em SR Policy | Concluído | [bgp-lu](../labs/cisco/sr-mpls/inter-as/bgp-lu/) |
 | BGP-EPE centralizado com controlador e BGP-LS | Planejado | Requer controlador externo |
 | SR-PCE com visão de topologia interdomínio | Planejado | - |
-
-Quando integrado, o lab de multi-domínio deverá entrar em
-`labs/cisco/sr-mpls/multidominio-ospf/`, reunindo o `lab.clab.yml`, as
-configurações e o roteiro no mesmo diretório.
 
 ## Multivendor
 

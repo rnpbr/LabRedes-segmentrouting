@@ -49,4 +49,4 @@ Os dois resolvem problemas parecidos (caminho diferente do SPF default) por meca
 - **SR-TE** opera por policy, no headend, por color+endpoint. Granularidade de fluxo/servico - policies diferentes podem levar trafegos diferentes para o mesmo destino por caminhos diferentes.
 - **Flex-Algo** opera no IGP inteiro: todo no do dominio calcula um SPF alternativo com as mesmas restricoes (afinidades, metrica alternativa), e o resultado e um Prefix-SID por algoritmo, valido para qualquer origem. Granularidade de topologia, nao de fluxo.
 
-Na pratica se combinam: Flex-Algo constroi o plano de encaminhamento restrito, e SR-TE pode usar SIDs desse algoritmo dentro de uma segment list. Nenhum lab de Flex-Algo existe ainda neste projeto - ver [`roadmap.md`](../../roadmap.md).
+Na pratica se combinam: Flex-Algo constroi o plano de encaminhamento restrito, e SR-TE pode usar SIDs desse algoritmo dentro de uma segment list. O lab [`flex-algo-anycast`](../../../labs/cisco/sr-mpls/multidominio/flex-algo-anycast/) faz exatamente isso: uma segment list explicita feita de SIDs do algoritmo 128 - ver [conceitos de multidominio](./multidominio.md).
