@@ -1,45 +1,112 @@
-name: flex-algo-anycast
+# Multidominio OSPF - Flex-Algo com SID anycast de borda
+#
+# Deploy:
+#   sudo clab deploy -t lab.clab.yml
+#
+# Cada no le seu arquivo de configuracao em configs/<no>.cfg, ao lado deste
+# arquivo. O containerlab entrega o .cfg ao XRd como first-boot.cfg.
+#
+# Repositorio: https://github.com/rnpbr/LabRedes-segmentrouting.git
+#
+# enforce-startup-config faz todo deploy reaplicar o .cfg, em vez de reusar a
+# config gravada por uma execucao anterior.
+#
+# Tres dominios OSPF independentes (processos 100, 200 e 300, todos em area 0).
+# Os DBRs pertencem a dois dominios e rodam um processo por dominio, sem
+# redistribuicao entre eles. Os enlaces "red" sao mais baratos que o caminho
+# limpo: o SPF default os escolhe e o Flex-Algo 128 os exclui.
+
+name: multidominio-flex-algo-anycast
+
+mgmt:
+  network: multidominio-flex-algo-anycast-mgmt
+  ipv4-subnet: 172.20.27.0/24
 
 topology:
   defaults:
     kind: cisco_xrd
-    image: xrd-control-plane:7.10.2
+
+  kinds:
+    cisco_xrd:
+      image: ios-xr/xrd-control-plane:7.10.2
+      enforce-startup-config: true
+
   nodes:
+    # --- Dominio A / OSPF 100 ----------------------------------------------
     pe1:
+      mgmt-ipv4: 172.20.27.11
       startup-config: configs/pe1.cfg
     p1:
+      mgmt-ipv4: 172.20.27.12
       startup-config: configs/p1.cfg
     p2:
+      mgmt-ipv4: 172.20.27.13
       startup-config: configs/p2.cfg
+
+    # --- Fronteira AB: OSPF 100 + OSPF 200 ---------------------------------
     dbr-ab1:
+      mgmt-ipv4: 172.20.27.14
       startup-config: configs/dbr-ab1.cfg
     dbr-ab2:
+      mgmt-ipv4: 172.20.27.15
       startup-config: configs/dbr-ab2.cfg
+
+    # --- Fronteira BC: OSPF 200 + OSPF 300 ---------------------------------
     dbr-bc1:
+      mgmt-ipv4: 172.20.27.16
       startup-config: configs/dbr-bc1.cfg
     dbr-bc2:
+      mgmt-ipv4: 172.20.27.17
       startup-config: configs/dbr-bc2.cfg
+
+    # --- Dominio C / OSPF 300 ----------------------------------------------
     p3:
+      mgmt-ipv4: 172.20.27.18
       startup-config: configs/p3.cfg
     p4:
+      mgmt-ipv4: 172.20.27.19
       startup-config: configs/p4.cfg
     pe9:
+      mgmt-ipv4: 172.20.27.20
       startup-config: configs/pe9.cfg
+
   links:
+    # --- Dominio A: 10.1.0.0/16 --------------------------------------------
+    # pe1-p1: limpo, custo 10
     - endpoints: ["pe1:Gi0-0-0-0", "p1:Gi0-0-0-0"]
+    # pe1-p2: red, custo 5
     - endpoints: ["pe1:Gi0-0-0-1", "p2:Gi0-0-0-0"]
+    # p1-p2: limpo, custo 10
     - endpoints: ["p1:Gi0-0-0-1", "p2:Gi0-0-0-1"]
+    # p1-dbr-ab1: limpo, custo 10
     - endpoints: ["p1:Gi0-0-0-2", "dbr-ab1:Gi0-0-0-0"]
+    # p2-dbr-ab2: limpo, custo 10
     - endpoints: ["p2:Gi0-0-0-2", "dbr-ab2:Gi0-0-0-0"]
+
+    # --- Dominio B: 10.2.0.0/16 --------------------------------------------
+    # dbr-ab1-dbr-bc1: limpo, custo 20
     - endpoints: ["dbr-ab1:Gi0-0-0-1", "dbr-bc1:Gi0-0-0-0"]
+    # dbr-ab1-dbr-bc2: red, custo 5
     - endpoints: ["dbr-ab1:Gi0-0-0-2", "dbr-bc2:Gi0-0-0-0"]
+    # dbr-ab2-dbr-bc1: limpo, custo 20
     - endpoints: ["dbr-ab2:Gi0-0-0-1", "dbr-bc1:Gi0-0-0-1"]
+    # dbr-ab2-dbr-bc2: limpo, custo 10
     - endpoints: ["dbr-ab2:Gi0-0-0-2", "dbr-bc2:Gi0-0-0-1"]
+    # dbr-ab1-dbr-ab2: limpo, custo 30
     - endpoints: ["dbr-ab1:Gi0-0-0-3", "dbr-ab2:Gi0-0-0-3"]
+    # dbr-bc1-dbr-bc2: limpo, custo 30
     - endpoints: ["dbr-bc1:Gi0-0-0-2", "dbr-bc2:Gi0-0-0-2"]
+
+    # --- Dominio C: 10.3.0.0/16 --------------------------------------------
+    # dbr-bc1-p3: limpo, custo 10
     - endpoints: ["dbr-bc1:Gi0-0-0-3", "p3:Gi0-0-0-0"]
+    # dbr-bc2-p4: limpo, custo 5
     - endpoints: ["dbr-bc2:Gi0-0-0-3", "p4:Gi0-0-0-0"]
+    # dbr-bc1-dbr-bc2: limpo, custo 5 (segundo enlace entre os dois, agora no OSPF 300)
     - endpoints: ["dbr-bc1:Gi0-0-0-4", "dbr-bc2:Gi0-0-0-4"]
+    # p3-p4: limpo, custo 10
     - endpoints: ["p3:Gi0-0-0-1", "p4:Gi0-0-0-1"]
+    # p3-pe9: limpo, custo 10
     - endpoints: ["p3:Gi0-0-0-2", "pe9:Gi0-0-0-0"]
+    # p4-pe9: red, custo 5
     - endpoints: ["p4:Gi0-0-0-2", "pe9:Gi0-0-0-1"]
