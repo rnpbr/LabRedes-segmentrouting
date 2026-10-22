@@ -27,17 +27,17 @@ O custo precisa estar nos dois lados porque o OSPF usa o custo da interface de s
 
 ## Endereçamento
 
-O projeto usa dois esquemas:
+O projeto usa três esquemas:
 
-| | Referência, SR-TE e Inter-AS | Labs de TI-LFA |
-|---|---|---|
-| Loopbacks | `10.0.0.0/24`, host = ID do nó | `10.0.1.248` a `10.0.1.254` |
-| Enlaces | `192.0.2.0/24`, `/31` | `10.10.<a><b>.0/30` |
-| Onde aparece | topologia desta página, `explicit-policy`, `bgp-lu` | os cinco labs de TI-LFA |
+| | Referência, SR-TE e Inter-AS | Labs de TI-LFA | Multidomínio |
+|---|---|---|---|
+| Loopbacks | `10.0.0.0/24`, host = ID do nó | `10.0.1.248` a `10.0.1.254` | `10.<domínio>.255.<nó>/32` |
+| Enlaces | `192.0.2.0/24`, `/31` | `10.10.<a><b>.0/30` | `10.<domínio>.0.0/16`, `/31` |
+| Onde aparece | topologia desta página, `explicit-policy`, `bgp-lu` | os cinco labs de TI-LFA | `flex-algo-anycast` |
 
 O lab `bgp-lu` acrescenta `198.51.100.0/24` e `203.0.113.0/24` para as redes de cliente. Os três blocos - com o `192.0.2.0/24` - são reservados pela RFC 5737.
 
-O `192.0.2.0/24` é reservado pela RFC 5737 para documentação: serve em lab, não em produção. Os labs de TI-LFA usam `10.10.<origem><destino>.0/30` porque assim dá para ler o enlace direto na saída de um `traceroute`, sem consultar tabela.
+O `192.0.2.0/24` é reservado pela RFC 5737 para documentação: serve em lab, não em produção. Os labs de TI-LFA usam `10.10.<origem><destino>.0/30` porque assim dá para ler o enlace direto na saída de um `traceroute`, sem consultar tabela. O lab `flex-algo-anycast` usa um bloco `10.<domínio>.0.0/16` por domínio OSPF pelo mesmo motivo: o domínio de cada endereço fica legível no `traceroute`.
 
 **Os PoPs têm identidade fixa nos labs de TI-LFA.** Os cinco labs reusam os mesmos nós com os mesmos SIDs, então o label `16007` é BA em qualquer um deles:
 
@@ -51,7 +51,7 @@ O `192.0.2.0/24` é reservado pela RFC 5737 para documentação: serve em lab, n
 | PR | `10.0.1.249/32` | 6 | `16006` |
 | BA | `10.0.1.248/32` | 7 | `16007` |
 
-Cada lab sobe só os PoPs que precisa. A rede de gerência muda por lab (`172.20.20.0/24` no SR-TE, `172.20.21` a `172.20.25` nos de TI-LFA, `172.20.26.0/24` no Inter-AS), então dá para rodar mais de um ao mesmo tempo.
+Cada lab sobe só os PoPs que precisa. A rede de gerência muda por lab (`172.20.20.0/24` no SR-TE, `172.20.21` a `172.20.25` nos de TI-LFA, `172.20.26.0/24` no Inter-AS, `172.20.27.0/24` no multidomínio), então dá para rodar mais de um ao mesmo tempo.
 
 ## Topologia de referência
 
@@ -154,7 +154,7 @@ A partir de qualquer nó.
 | `show cef 10.0.0.5/32` | duas entradas de mesmo custo, se houver ECMP |
 | `ping` e `traceroute` | responde, com o label visível nos saltos do meio |
 
-`ping mpls` e `traceroute mpls` podem não retornar nada útil: a imagem é control-plane, sem OAM MPLS completo.
+`ping mpls` e `traceroute mpls` só retornam algo útil com `mpls oam` configurado, como no lab `flex-algo-anycast`. Sem ele, use `traceroute` e `show cef`.
 
 ## Referências
 

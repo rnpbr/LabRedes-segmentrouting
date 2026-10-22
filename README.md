@@ -36,7 +36,8 @@ LabRedes-segmentrouting/
             ├── 00-base/
             ├── ti-lfa/
             ├── sr-te/
-            └── inter-as/
+            ├── inter-as/
+            └── multidominio/
 ```
 
 Cada laboratório reúne no mesmo diretório o roteiro (`README.md`), a topologia

@@ -3,9 +3,10 @@
 Preparação específica para os laboratórios Cisco. Instale primeiro o Docker e
 o Containerlab conforme o [guia comum do projeto](../../docs/setup.md).
 
-Os labs usam de quatro a oito roteadores, com consumo aproximado de 1,5 GB de
-RAM por nó XRd. Reserve de 6 a 12 GB. O `bgp-lu` é o maior cenário: oito
-roteadores, dois contêineres Alpine, aproximadamente 12 GB de RAM e oito CPUs.
+Os labs usam de quatro a dez roteadores, com consumo aproximado de 1,5 a 2,2 GB
+de RAM por nó XRd. Reserve de 6 a 12 GB para a maioria. O `bgp-lu` tem oito
+roteadores e dois contêineres Alpine, aproximadamente 12 GB de RAM e oito CPUs.
+O `flex-algo-anycast` é o maior: dez roteadores, cerca de 22 GB de RAM medidos.
 
 ## Imagem XRd
 
@@ -67,7 +68,7 @@ cd labs/cisco/sr-mpls/<categoria>/<lab>
 sudo clab deploy -t lab.clab.yml
 ```
 
-`<categoria>` é `ti-lfa`, `sr-te` ou `inter-as`. Cada roteiro informa o caminho
+`<categoria>` é `ti-lfa`, `sr-te`, `inter-as` ou `multidominio`. Cada roteiro informa o caminho
 exato e os nomes dos nós.
 
 Acesso: `ssh clab@<ip>`, senha `clab@123`. Cada lab documenta os IPs. Alternativa sem SSH:
@@ -148,7 +149,8 @@ No markdown, o texto alternativo descreve o comando:
 ```
 
 Os diagramas saem dos `.drawio` em `sr-mpls/ti-lfa/diagrams/` e
-`sr-mpls/sr-te/diagrams/`. Edite a fonte correspondente e reexporte.
+`sr-mpls/sr-te/diagrams/`, e do script `sr-mpls/multidominio/diagrams/gerar-figuras.py`.
+Edite a fonte correspondente e reexporte.
 
 Capturas de terminal são sempre `.png`. Diagramas podem ser `.svg`: é o caso do `bgp-lu`, cujas figuras têm variante clara e escura (`<nome>.svg` e `<nome>-escuro.svg`) servidas por `<picture>`/`prefers-color-scheme`, para continuarem legíveis no tema escuro do GitHub.
 
@@ -162,4 +164,6 @@ Capturas de terminal são sempre `.png`. Diagramas podem ser `.svg`: é o caso d
 | Adjacência OSPF não sobe | Interface errada no `.clab.yml` (`Gi0-0-0-N` tem que casar com `GigabitEthernet0/0/0/N`), ou falta `network point-to-point` |
 | Custo IGP diferente do documentado | Custo declarado em um lado só. OSPF usa o custo da interface de saída, então precisa nos dois |
 | `docker load` com tag diferente | Remarcar com `docker tag` |
-| `ping mpls` sem saída útil | Esperado. A imagem control-plane não tem OAM MPLS completo. Use `traceroute` e `show cef` |
+| `ping mpls` responde `% MPLS Embedded Management Subsystem is not running` | Falta `mpls oam` na configuração. Com ele, `ping mpls` e `traceroute sr-mpls` funcionam no XRd 7.10.2 (ver `flex-algo-anycast`); sem ele, use `traceroute` e `show cef` |
+| `show configuration failed startup` mostra `grpc` / `port 9339` | O XRd 7.10.2 só aceita portas gRPC `57344-57999`. A linha é rejeitada e o gRPC sobe na porta padrão; o resto da configuração é aplicado |
+| Todos os nós XRd acima de 100% de CPU, adjacências OSPF caindo | Tempestade na rede de gerência: o XRd roteia de volta quadros endereçados a outros MACs. Acontece quando o endereço de gerência de um nó serve de origem para tráfego do lab e esse nó não transmite pela gerência. Ver a ACL `MGMT-NO-TRANSIT` do `flex-algo-anycast` |

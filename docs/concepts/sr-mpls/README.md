@@ -41,6 +41,7 @@ um protocolo separado de distribuição de labels dentro do domínio SR.
 - [TI-LFA](./ti-lfa.md): proteção e reconvergência.
 - [SR-TE](./sr-te.md): engenharia de tráfego com SR Policy.
 - [Inter-AS](./inter-as.md): transporte rotulado entre domínios.
+- [Multidomínio](./multidominio.md): Flex-Algo e SID anycast entre domínios IGP.
 
 ## Glossário
 

@@ -45,6 +45,16 @@ Conceitos: [transporte Inter-AS](../../docs/concepts/sr-mpls/inter-as.md).
 Os dois nós adicionais do `bgp-lu` são clientes Alpine. Esse cenário requer
 aproximadamente 12 GB de RAM e oito CPUs.
 
+### Multidomínio
+
+| Lab | O que mostra | Nós |
+|---|---|---:|
+| [flex-algo-anycast](./sr-mpls/multidominio/flex-algo-anycast/) | Três domínios OSPF sem redistribuição, Flex-Algo 128 e SIDs anycast de borda numa SR Policy explícita, e o buraco negro do anycast | 10 |
+
+Conceitos: [multidomínio, Flex-Algo e SID anycast](../../docs/concepts/sr-mpls/multidominio.md).
+
+É o maior cenário: dez roteadores XRd, cerca de 22 GB de RAM medidos.
+
 ## Executar um cenário
 
 Cada lab contém todos os arquivos necessários:
